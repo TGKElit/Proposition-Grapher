@@ -11,3 +11,4 @@ poem-openapi = { version ="3.0.5", features = ["static-files"] }
 tokio = { version = "1.33.0", features = ["full"] }
 sqlx = { version = "0.7.2", features = ["runtime-tokio", "tls-rustls", "postgres", "macros"] }
 dotenv = "0.15.0"
+bcrypt = "0.15.0"
