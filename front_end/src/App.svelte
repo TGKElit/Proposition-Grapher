@@ -41,7 +41,7 @@ const callApi = (email: string, username: string, password: string, endpoint: en
       response = data;
       console.log(response);
       fetch("/api/auth-status", {
-      method: "POST",
+      method: "GET",
       headers: {
         'Content-Type': 'application/json'
       },

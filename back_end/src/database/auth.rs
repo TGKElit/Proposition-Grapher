@@ -22,7 +22,7 @@ fn generate_session_id_hash(session_id: &str) -> String {
 async fn update_session_id (session: &Session) -> String{
     let session_id_option: Option<String> = session.get("session_id");
     let session_id: String;
-    if session_id_option.is_some() && !is_logged_in(session.get("username"), session.get("session_id")).await {
+    if session_id_option.is_some() && !is_logged_in(session.get("username"), session_id_option.clone()).await {
         session_id = session_id_option.unwrap();
     } else {
         session_id = generate_session_id();
@@ -35,7 +35,8 @@ async fn update_session_id (session: &Session) -> String{
 pub async fn register (email: String, username: &String, password: String, session: &Session) {
     let password_hash = hash(password, 12).expect("Hashing failed");
     let session_id_hash = update_session_id(session).await;
-    super::add_user(email, username, password_hash, session_id_hash).await
+    super::add_user(&email, username, password_hash, session_id_hash).await;
+    super::add_profile(email).await;
 }
 
 pub async fn login (email: String, password: String, session: &Session) -> Json<String> {

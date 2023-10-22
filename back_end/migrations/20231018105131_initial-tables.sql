@@ -19,7 +19,7 @@ CREATE TABLE users (
 CREATE TABLE profiles (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_email varchar(255) NOT NULL,
-    propositional_access boolean DEFAULT false
+    propositional_access boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE propositions (
@@ -30,8 +30,8 @@ CREATE TABLE propositions (
 
 CREATE TABLE relations (
     id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
-    premise_id uuid,
-    conclusion_id uuid,
+    premise_id uuid NOT NULL,
+    conclusion_id uuid NOT NULL,
     propositional_validity validity,
     UNIQUE (premise_id, conclusion_id)
 );
@@ -39,7 +39,7 @@ CREATE TABLE relations (
 CREATE TABLE propositional_formalizations (
     id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
     profile_id uuid,
-    proposition_id uuid,
+    proposition_id uuid NOT NULL,
     formalization_string varchar(255) NOT NULL,
     UNIQUE(proposition_id, formalization_string)
 );
