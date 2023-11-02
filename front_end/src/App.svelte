@@ -1,11 +1,19 @@
 <script lang="ts">
 
+import { Route, Router, Link } from "svelte-routing";
+import Home from "./components/Home.svelte";
+import NewProposition from "./components/NewProposition.svelte";
+import Proposition from "./components/Proposition.svelte";
+import { onMount } from "svelte";
+
 let response = "";
 let email: string;
 let username: string;
 let password: string;
-let bgColor = "#EEE";
+let loggedIn = false;
+let page: view;
 
+type view = "login" | "register";
 type endpoint = "register" | "login" | "logout";
 
 const callApi = (email: string, username: string, password: string, endpoint: endpoint) => {
@@ -41,19 +49,15 @@ const callApi = (email: string, username: string, password: string, endpoint: en
       response = data;
       console.log(response);
       fetch("/api/auth-status", {
-      method: "GET",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    })
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      })
       .then(response => response.json())
       .then(data => {
         response = data;
-        if (response) {
-          bgColor = "#2E2";
-        } else {
-          bgColor = "#E22"
-        }
+        loggedIn = data;
         console.log(response);
       }).catch(error => {
           console.log(error);
@@ -63,38 +67,76 @@ const callApi = (email: string, username: string, password: string, endpoint: en
         console.log(error);
         return [];
     })
-    
-    
 }
+
+onMount(() => {
+  fetch("/api/auth-status", {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        response = data;
+        loggedIn = data;
+        console.log(response);
+      }).catch(error => {
+          console.log(error);
+          return [];
+      });
+})
 
 </script>
 
 <main>
-  <h1>Proposition Grapher</h1>
-  <section style='--bgColor:{bgColor}'>
-    <label for="email">Email:</label>
-    <input type="text" name="email" bind:value={email}>
-    <label for="username">Username:</label>
-    <input type="text" name="username" bind:value={username}>
-    <label for="password">Password:</label>
-    <input type="password" name="password" bind:value={password}>
-    <button on:click={() => {callApi(email, username, password, "register")}}>Register</button>
-    <button on:click={() => {callApi(email, username, password, "login")}}>Login</button>
-    <button on:click={() => {callApi(email, username, password, "logout")}}>Logout</button>
-  </section>
-
-  <p>{response}</p>
+  <Router>
+    <nav>
+      <Link to="/">Home</Link>
+      {#if loggedIn}
+      <Link to="/new-proposition">New Proposition</Link>
+      <button on:click={() => {callApi(email, username, password, "logout")}}>Logout</button>
+      {:else}
+      <Link to="/login" on:click={() => page = "login"}>Login</Link>
+      <Link to="/login" on:click={() => page = "register"}>Register</Link>
+      {/if}
+    </nav>
+  
+    <Route path="/" component={Home} />
+    <Route path="/login">
+      <section>
+        <label for="email">Email:</label>
+        <input type="text" name="email" bind:value={email}>
+        {#if page == "register"}
+        <label for="username">Username:</label>
+        <input type="text" name="username" bind:value={username}>
+        {/if}
+        <label for="password">Password:</label>
+        <input type="password" name="password" bind:value={password}>
+        {#if page == "register"}
+        <Link to="/" on:click={() => {callApi(email, username, password, "register")}}>Register</Link>
+        {:else}
+        <Link to="/" on:click={() => {callApi(email, username, password, "login")}}>Login</Link>
+        {/if}
+      </section>
+    </Route>
+    <Route path="/new-proposition" component={NewProposition} />
+    <Route path="/proposition" component={Proposition} />
+  </Router>
 
 </main>
   
 <style>
-  section {
-    height: 40vh;
-    padding: 1rem;
+  nav {
+    height: 4rem;
+    width: 100vw;
+    top: 0;
+    left: 0;
+    background-color: #eee;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
-    background-color: var(--bgColor);
+    justify-content: space-around;
   }
+  
+
+
 </style>

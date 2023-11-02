@@ -6,7 +6,8 @@ use poem::{
     endpoint::StaticFilesEndpoint,
     Route,
     session::{CookieConfig, ServerSession, MemoryStorage},
-    EndpointExt, web::cookie::SameSite
+    EndpointExt,
+    web::cookie::SameSite
 };
 use poem_openapi::OpenApiService;
 
@@ -18,11 +19,18 @@ async fn main() -> Result<(), std::io::Error> {
     
     let api_service =
         OpenApiService::new(api::Api, "Hello World", "1.0").server("/api");
-    let front_end = StaticFilesEndpoint::new("../front_end/dist/")
-        .index_file("index.html");
+    macro_rules! front_end {
+        () => {
+            StaticFilesEndpoint::new("../front_end/dist/")
+                .index_file("index.html")
+        };
+    } 
     let app = Route::new()
+        .nest("/", front_end!())
+        .nest("/login", front_end!())
+        .nest("/new-proposition", front_end!())
+        .nest("/proposition", front_end!())
         .nest("/api", api_service)
-        .nest("/", front_end)
         .with(ServerSession::new(
             CookieConfig::new().same_site(SameSite::Strict),
             MemoryStorage::new()

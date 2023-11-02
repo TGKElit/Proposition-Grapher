@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 poem = { version ="1.3.58", features = ["session"]}
-poem-openapi = { version ="3.0.5", features = ["static-files"] }
+poem-openapi = { version ="3.0.5", features = ["static-files", "uuid"] }
 tokio = { version = "1.33.0", features = ["full"] }
 sqlx = { version = "0.7.2", features = ["runtime-tokio", "tls-rustls", "postgres", "macros", "uuid",] }
 dotenv = "0.15.0"
