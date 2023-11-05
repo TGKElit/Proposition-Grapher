@@ -14,6 +14,13 @@ enum Validity {
     Antivalid
 }
 
+pub enum Votee {
+    Proposition,
+    Relation,
+    PropositionalFormalization
+}
+
+//Entities
 struct User {
     email: String,
     username: String,
@@ -49,6 +56,32 @@ struct PropositionalFormalization {
     proposition_id: Uuid,
     formalization_string: String,
     correctness_score: Option<f64>
+}
+
+//Relations
+
+
+struct ProfilesPropositions {
+    profile_id: Uuid,
+    proposition_id: Uuid,
+    is_true: bool
+}
+struct ProfilesRelations {
+    profile_id: Uuid,
+    relation_id: Uuid,
+    is_correlated: bool
+}
+
+struct ProfilesPropositionalFormalizations {
+    profile_id: Uuid,
+    propositional_formalization_id: Uuid,
+    is_correct: bool
+}
+
+struct PropositionalFormalizationsPropositions {
+    propositional_formalization_id: Uuid,
+    proposition_id: Uuid,
+    sentence_symbol: char
 }
 
 
@@ -182,10 +215,10 @@ async fn get_proposition(id: Uuid) -> Result<Proposition, Box<dyn Error>> {
     let pool = database_connection().await?;
     let proposition = sqlx::query_as!(
         Proposition,
-        "SELECT propositions.*, CAST(truth_scores.truth_score AS FLOAT) AS truth_score
+        "SELECT propositions.*, truth_scores.truth_score AS truth_score
         FROM propositions
         LEFT JOIN (
-            SELECT proposition_id , COUNT(CASE WHEN is_true = true THEN 1 END) / COUNT(*) AS truth_score
+            SELECT proposition_id , COUNT(CASE WHEN is_true = true THEN 1 END)::float / COUNT(*) AS truth_score
             FROM profiles_propositions
             GROUP BY proposition_id
         ) AS truth_scores
@@ -316,7 +349,7 @@ async fn get_propositional_formalizations(proposition_id: Uuid) -> Result<Vec<Pr
 }
 
 // Setters
-async fn set_session_id_hash (session_id_hash: String, email: String) -> Result<(), Box<dyn Error>>{
+async fn set_session_id_hash (session_id_hash: String, email: String) -> Result<(), Box<dyn Error>> {
     let pool = database_connection().await?;
 
     sqlx::query_as!(
@@ -328,6 +361,20 @@ async fn set_session_id_hash (session_id_hash: String, email: String) -> Result<
     )
     .execute(&pool)
     .await?;
+    Ok(())
+}
+
+async fn set_proposition_truth (profile_id: Uuid, proposition_id: Uuid, is_true: bool) -> Result<(), Box<dyn Error>> {
+    let pool = database_connection().await?;
+        sqlx::query_as!(
+            ProfilesPropositions,
+            "INSERT INTO profiles_propositions (profile_id, proposition_id, is_true) 
+            VALUES ($1, $2, $3)
+            ON CONFLICT (profile_id, proposition_id)
+            DO UPDATE SET is_true = $3",
+            profile_id, proposition_id, is_true
+        ).execute(&pool)
+        .await?;
     Ok(())
 }
 

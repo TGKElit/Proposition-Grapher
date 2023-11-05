@@ -70,7 +70,7 @@ CREATE TABLE profiles__propositional_formalizations (
 CREATE TABLE propositional_formalizations__propositions (
     propositional_formalization_id uuid,
     proposition_id uuid,
-    sentence_symbol varchar(1) NOT NULL,
+    sentence_symbol char(1) NOT NULL,
     PRIMARY KEY (propositional_formalization_id, proposition_id)
 );
 

@@ -121,7 +121,9 @@ onMount(() => {
       </section>
     </Route>
     <Route path="/new-proposition" component={NewProposition} />
-    <Route path="/proposition" component={Proposition} />
+    <Route path="/proposition" >
+      <Proposition {loggedIn}/>
+    </Route>
   </Router>
 
 </main>
@@ -136,7 +138,5 @@ onMount(() => {
     display: flex;
     justify-content: space-around;
   }
-  
-
 
 </style>

@@ -31,3 +31,15 @@ pub async fn post_proposition(profile_id: Uuid, lexical_description: String) -> 
 pub async fn get_profile_id(username: String) -> Result<Uuid, Box<dyn Error>> {
     Ok(super::get_profile(username).await?.id)
 }
+
+pub async fn vote(profile_id: Uuid, subject_id: Uuid, vote: bool, votee: super::Votee) -> Result<(), Box<dyn Error>> {
+    match votee {
+        super::Votee::Proposition => super::set_proposition_truth(profile_id, subject_id, vote).await,
+        super::Votee::Relation | super::Votee::PropositionalFormalization => Ok(())
+    }
+}
+
+pub async fn post_formalization(profile_id: Uuid, proposition_id: Uuid, formalization_string: String) -> Result<(), Box<dyn Error>> {
+    super::add_propositional_formalization(profile_id, proposition_id, formalization_string).await?;
+    Ok(())
+}

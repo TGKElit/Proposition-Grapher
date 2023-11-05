@@ -29,11 +29,11 @@ const postProposition = (description: String) => {
 
 <section>
     <label for="description">Description:</label>
-    <input type="text" name="description" bind:value={description}>
+    <textarea name="description" bind:value={description}/>
     
     <button on:click={() => {postProposition(description)}}>Post</button>
 </section>
 
 <style>
-    
+
 </style>
