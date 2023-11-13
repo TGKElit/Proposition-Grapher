@@ -1,10 +1,10 @@
 
 
 use poem::session::Session;
-use poem_openapi::{payload::Json,OpenApi, Object, param::Query};
+use poem_openapi::{payload::Json, OpenApi, Object, param::Query};
 use sqlx::types::Uuid;
 
-use crate::database::{auth, graph, Proposition, Votee};
+use crate::database::{auth, graph::{self, Graph}, Proposition, Votee};
 
 pub struct Api;
 
@@ -39,11 +39,15 @@ struct VoteRequest {
 
 #[derive(Object)]
 struct PostFormalizationRequest {
-    formalization_string: String,
-    proposition_id: Uuid
+    proposition_id: Uuid,
+    formalization_string: String
 }
 
-
+#[derive(Object)]
+struct PostRelationRequest {
+    premise_id: Uuid,
+    conclusion_id: Uuid
+}
 
 
 #[OpenApi]
@@ -65,7 +69,7 @@ impl Api {
 
     #[oai(path = "/logout", method = "post")]
     async fn logout(&self, session: &Session) -> Json<String> {
-        auth::logout(session.get("username")).await;
+        auth::logout(session.get("username")).await.unwrap();
         session.purge();
 
         Json(format!("logged out, {:?}", session.status()))
@@ -89,8 +93,8 @@ impl Api {
         }
     }
     #[oai(path = "/proposition", method = "get")]
-    async fn get_proposition(&self, id: Query<Option<String>>) -> Json<Proposition> {
-        let id = Uuid::parse_str(id.as_ref().unwrap()).unwrap();
+    async fn get_proposition(&self, id: Query<String>) -> Json<Proposition> {
+        let id = Uuid::parse_str(id.as_ref()).unwrap();
         graph::get_proposition(id).await.unwrap()
         //Json("ddd".to_string())
     }
@@ -108,11 +112,9 @@ impl Api {
     }
 
     #[oai(path = "/graph", method = "get")]
-    async fn get_graph(&self) -> Json<Proposition> {
+    async fn get_graph(&self, depth: Query<u8>) -> Json<Graph> {
         let center_node_id: Option<Uuid> = None;
-        //let center_node_id = Uuid::parse_str(proposition_id.0.unwrap().as_str()).ok();
-        graph::get_graph(center_node_id, 1).await.unwrap()
-        //Json("ddd".to_string())
+        graph::get_graph(center_node_id, *depth).await.unwrap()
     }
 
     #[oai(path = "/formalization", method = "post")]
@@ -125,5 +127,20 @@ impl Api {
         } else {
             Json("Publishing failed: Not logged in".to_string())
         }
+    }
+
+    #[oai(path = "/relation", method = "post")]
+    async fn post_relation(&self, request: Json<PostRelationRequest>, session: &Session) -> Json<String> {
+        if auth::is_logged_in(session.get("username"), session.get("session_id")).await.unwrap() {
+            graph::add_relation(request.0.premise_id, request.0.conclusion_id).await.unwrap();
+            Json("Relation added".to_string())
+        } else {
+            Json("Publishing failed: Not logged in".to_string())
+        } 
+    }
+
+    #[oai(path = "/search", method = "get")]
+    async fn search(&self, query: Query<String>) -> Json<Vec<Proposition>> {
+        Json(graph::get_proposition_search_result(query.0).await.unwrap())
     }
 }

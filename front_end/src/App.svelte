@@ -5,6 +5,7 @@ import Home from "./components/Home.svelte";
 import NewProposition from "./components/NewProposition.svelte";
 import Proposition from "./components/Proposition.svelte";
 import { onMount } from "svelte";
+import Search from "./components/Search.svelte";
 
 let response = "";
 let email: string;
@@ -12,6 +13,8 @@ let username: string;
 let password: string;
 let loggedIn = false;
 let page: view;
+let searching_for_argument = false;
+let proposition_id = "";
 
 type view = "login" | "register";
 type endpoint = "register" | "login" | "logout";
@@ -93,6 +96,7 @@ onMount(() => {
   <Router>
     <nav>
       <Link to="/">Home</Link>
+      <Search bind:searching_for_argument bind:proposition_id/>
       {#if loggedIn}
       <Link to="/new-proposition">New Proposition</Link>
       <button on:click={() => {callApi(email, username, password, "logout")}}>Logout</button>
@@ -122,7 +126,7 @@ onMount(() => {
     </Route>
     <Route path="/new-proposition" component={NewProposition} />
     <Route path="/proposition" >
-      <Proposition {loggedIn}/>
+      <Proposition {loggedIn} bind:searching_for_argument bind:proposition_id/>
     </Route>
   </Router>
 

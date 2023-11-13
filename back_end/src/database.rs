@@ -1,12 +1,13 @@
 
 pub mod auth;
 pub mod graph;
+pub mod formalization;
 
 use poem_openapi::Object;
 use sqlx::{postgres::PgPoolOptions, Postgres, Pool, types::Uuid};
 use std::error::Error;
 
-#[derive(sqlx::Type)]
+#[derive(sqlx::Type, PartialEq, Debug)]
 #[sqlx(type_name = "validity", rename_all = "lowercase")]
 enum Validity {
     Valid,
@@ -34,7 +35,7 @@ struct Profile {
     user_email: String,
     propositional_access: bool
 }
-#[derive(Object)]
+#[derive(Object, Clone, Debug)]
 pub struct Proposition {
     id: Uuid,
     profile_id: Option<Uuid>,
@@ -49,6 +50,7 @@ struct Relation {
     propositional_validity: Option<Validity>,
     correlation_score: Option<f64>
 }
+
 
 struct PropositionalFormalization {
     id: Uuid,
@@ -135,7 +137,7 @@ async fn add_proposition (lexical_description: String, profile_id: Uuid) -> Resu
     )
     .fetch_one(&pool)
     .await?.id;
-    Ok((proposition_id)) 
+    Ok(proposition_id) 
 }
 
 async fn add_relation (premise_id: Uuid, conclusion_id: Uuid) -> Result<(), Box<dyn Error>> {
@@ -346,6 +348,27 @@ async fn get_propositional_formalizations(proposition_id: Uuid) -> Result<Vec<Pr
     ).fetch_all(&pool)
     .await?;
     Ok(propositional_formalizations)
+}
+
+async fn get_proposition_search_result(search_query: String) -> Result<Vec<Proposition>, Box<dyn Error>> {
+    let pool = database_connection().await?;
+    let search_result = sqlx::query_as!(
+        Proposition,
+        "SELECT propositions.*, truth_scores.truth_score AS truth_score
+        FROM propositions
+        LEFT JOIN (
+            SELECT proposition_id , COUNT(CASE WHEN is_true = true THEN 1 END)::float / COUNT(*) AS truth_score
+            FROM profiles_propositions
+            GROUP BY proposition_id
+        ) AS truth_scores
+        ON propositions.id = truth_scores.proposition_id
+        WHERE to_tsvector('english', lexical_description) @@ to_tsquery('english', $1) OR lexical_description % $1
+        ORDER BY ts_rank(to_tsvector('english', lexical_description), to_tsquery('english', $1)) +
+        similarity(lexical_description, $1) DESC",
+        search_query.split_whitespace().collect::<Vec<&str>>().join(" & ")
+    ).fetch_all(&pool)
+    .await?;
+    Ok(search_result)
 }
 
 // Setters

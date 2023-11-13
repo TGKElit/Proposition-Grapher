@@ -5,7 +5,8 @@
     let id: String;
     
     onMount(async () => {
-        await fetch("/api/graph", {
+        console.log("Mounting");
+        await fetch("/api/graph?depth=3", {
             method: "GET",
             headers: {
                 'Content-Type': 'application/json'
@@ -13,8 +14,8 @@
         })
         .then(response => response.json())
         .then(data => {
-            lexical_description = data.lexical_description;
-            id = data.id;
+            lexical_description = data.node.lexical_description;
+            id = data.node.id;
             console.log(data);
         }).catch(error => {
             console.log(error);

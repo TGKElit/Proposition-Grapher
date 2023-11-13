@@ -1,26 +1,22 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     export let loggedIn: boolean;
+    export let searching_for_argument: boolean;
+    export let proposition_id: string;
     let lexical_description: String;
     let truth_score: number;
     let formalization_editor = false;
     let formalization_string: String = "";
     let formalization_valid: String = "";
     let formalization_invalid: String = "";
-    let params = new URLSearchParams(window.location.search)
-    let proposition_id = params.get("id");
+    let params = new URLSearchParams(location.search)
+    proposition_id = "" + params.get("id");
 
-
-    interface token {
-        
-        connective: connective,
-        atom: atom,
-    }
     enum connective {
-        and = "and",
-        or = "or",
-        implies = "implies",
-        iff = "iff"
+        and = "And",
+        or = "Or",
+        implies = "Implies",
+        iff = "Iff"
     }
     
     type atom = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z";
@@ -32,7 +28,7 @@
             left_operand: proposition
             main_connective: connective
             right_operand: proposition
-        } | string
+        }
     }
 
     const is_enclosed = (tokens: { token: String; type: string; }[]): boolean => {
@@ -71,9 +67,7 @@
         }
             
         if (tokens[0].token === "!") {
-            console.log("ptential_negation");
-            console.log(tokens.slice(1,tokens.length));
-            if (is_enclosed(tokens.slice(1,tokens.length))) {
+            if (is_enclosed(tokens.slice(1))) {
                 console.log("negation");
                 negated = true;
                 tokens.splice(0,1);
@@ -147,8 +141,7 @@
             }
         }
         throw new Error("Incorecctly formatted formalization");
-        
-        
+         
     }
 
     const token_expressions = [
@@ -235,11 +228,6 @@
 
     $: [formalization_valid, formalization_invalid] = proposition_display(lexer(formalization_string));
 
-    
-    const to_proposition = (string: String) => {
-        let tokens = lexer(string);
-
-    }
 
     const fetch_proposition = () => {
         fetch("/api/proposition?id=" + proposition_id)
@@ -255,9 +243,11 @@
     }
 
     onMount(async () => {
-        
         await fetch_proposition();
     });
+
+    //$: location, fetch_proposition(); 
+
 
     const vote = (vote: boolean) => {
         let body = {
@@ -278,9 +268,9 @@
     }
 
 
-    const suggest_formalization = () => {
+    const suggest_formalization = (formalization_string: String) => {
         let body = {
-            formalization_string: formalization_string,
+            formalization_string: JSON.stringify(parser(lexer(formalization_string))),
             proposition_id: proposition_id
         }
         fetch("/api/formalization", {
@@ -310,16 +300,16 @@
     <button on:click={() => formalization_editor = true}>Suggest formalization</button>
         {#if formalization_editor}
     <label for="formalization-string"></label>
-    <textarea name="formalization-string" bind:value={formalization_string}/>
-    {#if {formalization_string}}
+    <input name="formalization-string" bind:value={formalization_string}/>
+            {#if {formalization_string}}
     <div class="formalization-display">
         <p>{formalization_valid}</p>
         <p class="invalid">{formalization_invalid}</p>
     </div>
-        
-    {/if}
-    <button on:click={() => {console.log(parser(lexer(formalization_string)))}}>Publish</button>
+            {/if}
+    <button on:click={() => {suggest_formalization(formalization_string)}}>Publish</button>
         {/if}
+    <button on:click={() => {searching_for_argument = true}}>Add argument</button>
     {/if}
 
 </section>   

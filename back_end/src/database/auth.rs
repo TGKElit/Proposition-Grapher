@@ -37,8 +37,8 @@ async fn update_session_id (session: &Session) -> Result<String, Box<dyn Error>>
 pub async fn register (email: String, username: &String, password: String, session: &Session) -> Result<(), Box<dyn Error>>{
     let password_hash = hash(password, 12).expect("Hashing failed");
     let session_id_hash = update_session_id(session).await?;
-    super::add_user(&email, username, password_hash, session_id_hash).await;
-    super::add_profile(email).await;
+    super::add_user(&email, username, password_hash, session_id_hash).await?;
+    super::add_profile(email).await?;
     Ok(())
 }
 
@@ -49,7 +49,7 @@ pub async fn login (email: String, password: String, session: &Session) -> Resul
         
         let session_id_hash = update_session_id(session).await?;
 
-        super::set_session_id_hash(session_id_hash, user.email).await;
+        super::set_session_id_hash(session_id_hash, user.email).await?;
 
         session.set("username", &user.username);
         
@@ -60,8 +60,9 @@ pub async fn login (email: String, password: String, session: &Session) -> Resul
     }
 }
 
-pub async fn logout(username: Option<String>) {
-    super::remove_session_id_hash(username.unwrap()).await;
+pub async fn logout(username: Option<String>) -> Result<(), Box<dyn Error>>{
+    super::remove_session_id_hash(username.unwrap()).await?;
+    Ok(())
 }
 
 pub async fn is_logged_in (username: Option<String>, session_id: Option<String>) -> Result<bool, Box<dyn Error>> {
