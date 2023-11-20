@@ -1,11 +1,12 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { Link } from 'svelte-routing';
-    let lexical_description: String;
-    let id: String;
-    
+    import Graph from './Graph.svelte';
+    import type {nodes, relation} from '../functions/types';
+
+    let nodeObject: nodes;
+    let relations: relation[] = [];
+
     onMount(async () => {
-        console.log("Mounting");
         await fetch("/api/graph?depth=3", {
             method: "GET",
             headers: {
@@ -14,24 +15,29 @@
         })
         .then(response => response.json())
         .then(data => {
-            lexical_description = data.node.lexical_description;
-            id = data.node.id;
+            nodeObject = data.nodes;
+            relations = data.relations;
             console.log(data);
         }).catch(error => {
             console.log(error);
             return [];
         })
+        
     });
 </script>
 
 <section>
-    <Link to="/proposition?id={id}">
-        <p>{lexical_description}</p>
-    </Link>
+    {#if nodeObject}
+    <Graph nodeObject={nodeObject} relations={relations} x_offset={0} y_offset={0} steps_from_center={0}/>
+    {/if}
 </section>
 
 <style>
     section {
-        border-radius: 1rem;
+        width: 100vw;
+        height: calc(100vh - 4rem);
+        background-color: unset;
+        margin: 0;
     }
+    
 </style>

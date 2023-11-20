@@ -4,7 +4,7 @@ use poem::session::Session;
 use poem_openapi::{payload::Json, OpenApi, Object, param::Query};
 use sqlx::types::Uuid;
 
-use crate::database::{auth, graph::{self, Graph}, Proposition, Votee};
+use crate::database::{auth, graph::{self, Graph}, Proposition, Votee, PropositionalFormalization};
 
 pub struct Api;
 
@@ -111,6 +111,19 @@ impl Api {
         }
     }
 
+    #[oai(path = "/correctness", method = "post")]
+    async fn post_correctness(&self, request: Json<VoteRequest>, session: &Session) -> Json<String> {
+        println!("Found");
+        let username = session.get("username").unwrap();
+        if auth::is_logged_in(session.get("username"), session.get("session_id")).await.unwrap() {
+            let profile_id = graph::get_profile_id(username).await.unwrap();
+            graph::vote(profile_id, request.0.votee_id, request.0.vote, Votee::PropositionalFormalization).await.unwrap();
+            Json("Vote recorded".to_string())
+        } else {
+            Json("Vote failed: Not logged in".to_string())
+        }
+    }
+
     #[oai(path = "/graph", method = "get")]
     async fn get_graph(&self, depth: Query<u8>) -> Json<Graph> {
         let center_node_id: Option<Uuid> = None;
@@ -127,6 +140,11 @@ impl Api {
         } else {
             Json("Publishing failed: Not logged in".to_string())
         }
+    }
+
+    #[oai(path = "/formalization-list", method = "get")]
+    async fn get_formalizations(&self, id:Query<Uuid>) -> Json<Vec<PropositionalFormalization>> {
+        Json(graph::get_propositional_formalizations(id.0).await.unwrap())
     }
 
     #[oai(path = "/relation", method = "post")]

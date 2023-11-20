@@ -127,6 +127,7 @@ fn check_validity(premise: Formalization, conclusion: Formalization) -> Result<V
 
 
 
+
 #[cfg(test)]
 mod tests {
     use std::collections::{HashSet, HashMap};
@@ -215,7 +216,7 @@ mod tests {
             "negated":false,
             "formula":{
                 "left_operand":{
-                    "uuid":null,
+                    "uuid":"baaa93af-02a1-4528-aa77-bd95df4ae22c",
                     "negated":false,
                     "formula":"P"
                 },
@@ -227,8 +228,8 @@ mod tests {
                 }
             }
         }"#;
-        let conclusion_str = r#"{"uuid":null,"negated":false,"formula":"P"}"#;
-        let negated_conclusion_str =r#"{"uuid":null,"negated":true,"formula":"P"}"#;
+        let conclusion_str = r#"{"uuid":"baaa93af-02a1-4528-aa77-bd95df4ae22c","negated":false,"formula":"P"}"#;
+        let negated_conclusion_str =r#"{"uuid":"baaa93af-02a1-4528-aa77-bd95df4ae22c","negated":true,"formula":"P"}"#;
 
         let premise: Formalization = serde_json::from_str(premise_str).unwrap();
         let conclusion: Formalization = serde_json::from_str(conclusion_str).unwrap();
@@ -237,5 +238,9 @@ mod tests {
         assert_eq!(check_validity(premise.clone(), conclusion.clone()).unwrap(), Validity::Valid);
         assert_eq!(check_validity(conclusion.clone(), premise.clone()).unwrap(), Validity::Invalid);
         assert_eq!(check_validity(negated_conclusion.clone(), conclusion.clone()).unwrap(), Validity::Antivalid);
+
+
     }
+
+    
 }

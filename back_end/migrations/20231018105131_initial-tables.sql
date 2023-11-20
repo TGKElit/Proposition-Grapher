@@ -40,7 +40,7 @@ CREATE TABLE propositional_formalizations (
     id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
     profile_id uuid,
     proposition_id uuid NOT NULL,
-    formalization_string varchar(255) NOT NULL,
+    formalization_string varchar(2047) NOT NULL,
     UNIQUE(proposition_id, formalization_string)
 );
 

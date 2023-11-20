@@ -14,8 +14,7 @@ let password: string;
 let loggedIn = false;
 let page: view;
 let searching_for_argument = false;
-let proposition_id = "";
-
+let proposition_id: string = "";
 type view = "login" | "register";
 type endpoint = "register" | "login" | "logout";
 
@@ -83,7 +82,6 @@ onMount(() => {
       .then(data => {
         response = data;
         loggedIn = data;
-        console.log(response);
       }).catch(error => {
           console.log(error);
           return [];
@@ -126,7 +124,7 @@ onMount(() => {
     </Route>
     <Route path="/new-proposition" component={NewProposition} />
     <Route path="/proposition" >
-      <Proposition {loggedIn} bind:searching_for_argument bind:proposition_id/>
+      <Proposition {loggedIn} bind:searching_for_argument bind:proposition_id={proposition_id}/>
     </Route>
   </Router>
 

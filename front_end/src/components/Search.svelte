@@ -34,6 +34,8 @@
         <div>
             <Link to="/proposition?id={proposition.id}">GOTO</Link>
         {#if searching_for_argument}
+            {console.log(proposition.id)}
+            {console.log(proposition_id)}
             <button on:click={() => add_argument( proposition_id, proposition.id)}>Add as argument</button>
         {/if}
         </div>

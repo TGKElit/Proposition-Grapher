@@ -4,33 +4,60 @@ use async_recursion::async_recursion;
 use poem_openapi::{payload::Json, Object};
 use sqlx::types::Uuid;
 
-use super::Proposition;
+use super::{Proposition, Relation, PropositionalFormalization};
 
-#[derive(Clone, Object)]
-pub struct Graph {
+#[derive(Clone, Object, Debug)]
+pub struct Nodes {
     node: Proposition,
-    premises: Vec<Box<Graph>>,
-    conclusions: Vec<Box<Graph>>
+    premises: Vec<Box<Nodes>>,
+    conclusions: Vec<Box<Nodes>>
+
 }
 
+#[derive(Clone, Object, Debug)]
+pub struct Graph {
+    nodes: Nodes,
+    relations: Vec<Relation>
+}
 
 #[async_recursion]
 async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Error>>{
-    let premises = super::get_premises(graph.node.id).await?;
-    let conclusions = super::get_conclusions(graph.node.id).await?;
-
-    println!("Depth: {}, premises: {:?}", depth, premises);
     
     if depth > 0 {
+        let premises = super::get_premises(graph.nodes.node.id).await?;
+        let conclusions = super::get_conclusions(graph.nodes.node.id).await?;
+        let relations = super::get_relations(graph.nodes.node.id).await?;
+
+        for relation in relations {
+            if !graph.relations.contains(&relation) {
+                graph.relations.push(relation);
+            }
+        }
+    
+        println!("Depth: {}, premises: {:?}, conclusions: {:?}", depth, premises.len(), conclusions.len());
+        
+
         for premise in premises {
-            graph.premises.push(
-                Box::new(generate_graph(Graph { node: premise, premises: vec![], conclusions: vec![] }, depth-1).await?)
+            let sub_graph = generate_graph(Graph { nodes: Nodes { node: premise, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
+            graph.nodes.premises.push(
+                Box::new(sub_graph.nodes)
             );
+            for relation in sub_graph.relations {
+                if !graph.relations.contains(&relation) {
+                    graph.relations.push(relation);
+                }
+            }
         }
         for conclusion in conclusions {
-            graph.conclusions.push(
-                Box::new(generate_graph(Graph { node: conclusion, premises: vec![], conclusions: vec![] }, depth-1).await?)
+            let sub_graph = generate_graph(Graph { nodes: Nodes { node: conclusion, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
+            graph.nodes.conclusions.push(
+                Box::new(sub_graph.nodes)
             );
+            for relation in sub_graph.relations {
+                if !graph.relations.contains(&relation) {
+                    graph.relations.push(relation);
+                }
+            }
         }
     }
 
@@ -40,6 +67,7 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
 pub async fn get_graph(center_node_id: Option<Uuid>, depth: u8) -> Result<Json<Graph>, Box<dyn Error>> {
     println!("||||||||||||||||||||||");
     let center_node: Proposition;
+    let nodes: Nodes;
     let graph: Graph;
     if center_node_id.is_some() {
         center_node = super::get_proposition(center_node_id.unwrap()).await?;
@@ -47,11 +75,16 @@ pub async fn get_graph(center_node_id: Option<Uuid>, depth: u8) -> Result<Json<G
     else {
         center_node = super::get_random_proposition().await?;
     }
-    graph = Graph {
+    nodes = Nodes {
         node: center_node,
         premises: vec![],
         conclusions: vec![],
     };
+    graph = Graph {
+        nodes: nodes,
+        relations: vec![]
+    };
+    println!("{:?}", graph.relations);
 
     Ok(Json(generate_graph(graph, depth).await?))
 
@@ -72,7 +105,8 @@ pub async fn get_profile_id(username: String) -> Result<Uuid, Box<dyn Error>> {
 pub async fn vote(profile_id: Uuid, subject_id: Uuid, vote: bool, votee: super::Votee) -> Result<(), Box<dyn Error>> {
     match votee {
         super::Votee::Proposition => super::set_proposition_truth(profile_id, subject_id, vote).await,
-        super::Votee::Relation | super::Votee::PropositionalFormalization => Ok(())
+        super::Votee::Relation => Ok(()),
+        super::Votee::PropositionalFormalization => super::set_propositional_formalization_truth(profile_id, subject_id, vote).await
     }
 }
 
@@ -88,4 +122,8 @@ pub async fn get_proposition_search_result(search_query: String) -> Result<Vec<P
 pub async fn add_relation(premise_id: Uuid, conclusion_id: Uuid) -> Result<(), Box<dyn Error>> {
     super:: add_relation(premise_id, conclusion_id).await?;
     Ok(())
+}
+
+pub async fn get_propositional_formalizations(proposition_id: Uuid) -> Result<Vec<PropositionalFormalization>, Box<dyn Error>> {
+    Ok(super::get_propositional_formalizations(proposition_id).await?)
 }

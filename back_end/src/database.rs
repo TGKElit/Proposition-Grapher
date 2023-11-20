@@ -3,11 +3,12 @@ pub mod auth;
 pub mod graph;
 pub mod formalization;
 
-use poem_openapi::Object;
+use poem_openapi::{Object, Enum};
+use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, Postgres, Pool, types::Uuid};
 use std::error::Error;
 
-#[derive(sqlx::Type, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, sqlx::Type, PartialEq, Debug, Enum, Clone)]
 #[sqlx(type_name = "validity", rename_all = "lowercase")]
 enum Validity {
     Valid,
@@ -43,7 +44,8 @@ pub struct Proposition {
     truth_score: Option<f64>
 }
 
-struct Relation {
+#[derive(Object, PartialEq, Clone, Debug)]
+pub struct Relation {
     id: Uuid,
     premise_id: Uuid,
     conclusion_id: Uuid,
@@ -51,8 +53,8 @@ struct Relation {
     correlation_score: Option<f64>
 }
 
-
-struct PropositionalFormalization {
+#[derive(Object)]
+pub struct PropositionalFormalization {
     id: Uuid,
     profile_id: Option<Uuid>,
     proposition_id: Uuid,
@@ -396,6 +398,20 @@ async fn set_proposition_truth (profile_id: Uuid, proposition_id: Uuid, is_true:
             ON CONFLICT (profile_id, proposition_id)
             DO UPDATE SET is_true = $3",
             profile_id, proposition_id, is_true
+        ).execute(&pool)
+        .await?;
+    Ok(())
+}
+
+async fn set_propositional_formalization_truth (profile_id: Uuid, propositional_formalization_id: Uuid, is_correct: bool) -> Result<(), Box<dyn Error>> {
+    let pool = database_connection().await?;
+        sqlx::query_as!(
+            ProfilesPropositions,
+            "INSERT INTO profiles__propositional_formalizations (profile_id, propositional_formalization_id, is_correct) 
+            VALUES ($1, $2, $3)
+            ON CONFLICT (profile_id, propositional_formalization_id)
+            DO UPDATE SET is_correct = $3",
+            profile_id, propositional_formalization_id, is_correct
         ).execute(&pool)
         .await?;
     Ok(())
