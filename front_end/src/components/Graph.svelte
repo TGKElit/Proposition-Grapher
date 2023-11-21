@@ -1,65 +1,57 @@
 <script lang="ts">
     import PropositionThumbnail from "./PropositionThumbnail.svelte";
-    import type {nodes, relation} from "../functions/types";
+    import type {nodes, nodeData, relation} from "../functions/types";
     
     
     export let nodeObject: nodes;
     export let relations: relation[];
     export let visitedNodes = new Set<string>();
-    export let x_offset: number;
-    export let y_offset: number; 
-    export let steps_from_center: number;
-    let angle = Math.random() * 2 * Math.PI;
-    if (steps_from_center != 0) {
-        x_offset += Math.pow(1-steps_from_center/4, 0.5) * Math.cos(angle) * window.innerWidth / 70
-        y_offset += Math.pow(1-steps_from_center/4, 0.5) * Math.sin(angle) * window.innerHeight / 70
-    }
+    
 
-    let nodesToQueue: nodes[] = [nodeObject];
-    let queue: nodes[] = [];
-    /*while (nodesToQueue.length > 0) {
+    let nodesToQueue: nodeData[] = [{node: nodeObject, x_offset: 0, y_offset: 0, steps_from_center: 0}];
+    let queue: nodeData[] = [];
+    while (nodesToQueue.length > 0) {
         let currentLevelNodes = nodesToQueue;
         nodesToQueue = [];
         currentLevelNodes.forEach(currentNode => {
-            if (!visitedNodes.has(currentNode.node.id)) {
-                visitedNodes.add(currentNode.node.id);
+            if (!visitedNodes.has(currentNode.node.node.id)) {
+                visitedNodes.add(currentNode.node.node.id);
                 queue = [...queue, ...currentLevelNodes]
-                currentNode.premises.forEach(premise => {
+                currentNode.node.premises.forEach(premise => {
                     if (!visitedNodes.has(premise.node.id)) {
-                        nodesToQueue = [...nodesToQueue, premise]
+                        let angle = Math.random() * 2 * Math.PI;
+                        let steps_from_center = currentNode.steps_from_center + 1;
+                        let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.5) * Math.cos(angle) * window.innerWidth / 70;
+                        let y_offset = currentNode.y_offset + Math.pow(1-steps_from_center/4, 0.5) * Math.sin(angle) * window.innerHeight / 70;
+                        nodesToQueue = [...nodesToQueue, {
+                            node: premise,
+                            x_offset: x_offset,
+                            y_offset: y_offset,
+                            steps_from_center: steps_from_center
+                        }]
                     }
                 });
-                currentNode.conclusions.forEach(conclusion => {
+                currentNode.node.conclusions.forEach(conclusion => {
                     if (!visitedNodes.has(conclusion.node.id)) {
-                        nodesToQueue = [...nodesToQueue, conclusion]
+                        let angle = Math.random() * 2 * Math.PI;
+                        let steps_from_center = currentNode.steps_from_center + 1;
+                        let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.5) * Math.cos(angle) * window.innerWidth / 70;
+                        let y_offset = currentNode.y_offset + Math.pow(1-steps_from_center/4, 0.5) * Math.sin(angle) * window.innerHeight / 70;
+                        nodesToQueue = [...nodesToQueue, {
+                            node: conclusion,
+                            x_offset: x_offset,
+                            y_offset: y_offset,
+                            steps_from_center: steps_from_center
+                        }]
                     }
                 });
             }
         });
-    };*/
+    };
 </script>
 
-
-
-<PropositionThumbnail {nodeObject} {x_offset} {y_offset} {steps_from_center}/>
-{@html `<!--${visitedNodes.add(nodeObject.node.id)}-->`}
-
-
-{#each nodeObject.premises as premise}
-    {#if !visitedNodes.has(premise.node.id)}
-        
-    {@html `<!-- ${visitedNodes.add(premise.node.id)} -->`}
-<svelte:self nodeObject={premise} {visitedNodes} {x_offset} {y_offset} steps_from_center={steps_from_center + 1}/>
-    {/if}
-{/each}
-
-{#each nodeObject.conclusions as conclusion}
-    
-    {#if !visitedNodes.has(conclusion.node.id)}
-        
-    {@html `<!-- ${visitedNodes.add(conclusion.node.id)} -->`}
-<svelte:self nodeObject={conclusion} {visitedNodes} {x_offset} {y_offset} steps_from_center={steps_from_center + 1}/>
-    {/if}
+{#each queue as node}
+<PropositionThumbnail nodeObject={node.node} x_offset={node.x_offset} y_offset={node.y_offset} steps_from_center={node.steps_from_center}/>
 {/each}
 
 {#if relations}

@@ -21,7 +21,6 @@
 <style>
     button {
         border-radius: 1rem;
-        max-width: calc(20rem * var(--scale-down));
         min-height: calc(6rem * var(--scale-down));
         max-height: calc(6rem * var(--scale-down));
         position: absolute;

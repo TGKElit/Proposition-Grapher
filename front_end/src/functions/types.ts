@@ -1,3 +1,5 @@
+
+
 export type nodes = {
     node: {
         id: string,
@@ -8,11 +10,25 @@ export type nodes = {
     premises: nodes[],
     conclusions: nodes[]
 };
+
+export type nodeData = {
+    node: nodes,
+    x_offset: number,
+    y_offset: number,
+    steps_from_center: number
+}
+export enum validity {
+    valid = "Valid",
+    invalid = "Invalid",
+    antivalid = "Antivalid"
+}
+
 export type relation = {
     id: string,
     premise_id: string,
     conclusion_id: string,
-    correlation_score: number
+    correlation_score: number,
+    validity: validity
 }
 
 export enum connective {

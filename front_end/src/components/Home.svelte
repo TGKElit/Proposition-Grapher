@@ -28,7 +28,7 @@
 
 <section>
     {#if nodeObject}
-    <Graph nodeObject={nodeObject} relations={relations} x_offset={0} y_offset={0} steps_from_center={0}/>
+    <Graph nodeObject={nodeObject} relations={relations}/>
     {/if}
 </section>
 
