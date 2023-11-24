@@ -6,6 +6,7 @@ import NewProposition from "./components/NewProposition.svelte";
 import Proposition from "./components/Proposition.svelte";
 import { onMount } from "svelte";
 import Search from "./components/Search.svelte";
+  import Relation from "./components/Relation.svelte";
 
 let response = "";
 let email: string;
@@ -126,6 +127,7 @@ onMount(() => {
     <Route path="/proposition" >
       <Proposition {loggedIn} bind:searching_for_argument bind:proposition_id={proposition_id}/>
     </Route>
+    <Route path="/relation" component={Relation}/>
   </Router>
 
 </main>
@@ -139,6 +141,7 @@ onMount(() => {
     background-color: #eee;
     display: flex;
     justify-content: space-around;
+    z-index: 2;
   }
 
 </style>

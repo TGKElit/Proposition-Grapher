@@ -111,7 +111,7 @@ export const parser = (tokens: { token: string; type: string; }[]): proposition 
                 if (parenthesis_balance === 0 && (tokens.length <= 2 || (negated && tokens.length <= 3))) {
                     if (tokens.length > n+1) {
                         if (tokens[n+1].type === "uuid") {
-                            uuid = tokens[n+1].token;
+                            uuid = tokens[n+1].token.slice(1);
                         }
                     }
                     return proposition = {
@@ -268,4 +268,17 @@ export const proposition_display = (tokens: { token: string; type: string; }[]) 
         }
     });
     return [valid_string, invalid_string];
+}
+
+export const arctan = (x: number, y: number) => {
+    let result = Math.atan(y/x);
+    if (x < 0) {
+        if (y > 0) {
+            result += Math.PI;
+        } else {
+            result -= Math.PI;
+        }
+
+    }
+    return result;
 }

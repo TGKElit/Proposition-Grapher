@@ -32,10 +32,7 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
             if !graph.relations.contains(&relation) {
                 graph.relations.push(relation);
             }
-        }
-    
-        println!("Depth: {}, premises: {:?}, conclusions: {:?}", depth, premises.len(), conclusions.len());
-        
+        }        
 
         for premise in premises {
             let sub_graph = generate_graph(Graph { nodes: Nodes { node: premise, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
@@ -65,7 +62,6 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
 }
 
 pub async fn get_graph(center_node_id: Option<Uuid>, depth: u8) -> Result<Json<Graph>, Box<dyn Error>> {
-    println!("||||||||||||||||||||||");
     let center_node: Proposition;
     let nodes: Nodes;
     let graph: Graph;

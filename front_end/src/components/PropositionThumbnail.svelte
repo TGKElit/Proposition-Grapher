@@ -8,13 +8,11 @@
     export let y_offset: number;
     export let steps_from_center: number;
     
-    
-    //let distance_from_center: number = Math.sqrt(Math.pow(x_offset, 2) + Math.pow(y_offset, 2));
 
-    let scale_down = (1 - steps_from_center / 5);
+    let scale_down = (1 - steps_from_center / 7);
 </script>
 
-<button style="--x-offset: {x_offset}rem; --y-offset: {y_offset}rem; --scale-down: {scale_down}" on:click={() => {navigate("/proposition?id=" + nodeObject.node.id)}}>
+<button style="--x-offset: {x_offset}px; --y-offset: {y_offset}px; --scale-down: {scale_down}" on:click={() => {navigate("/proposition?id=" + nodeObject.node.id)}}>
         <p>{nodeObject.node.lexical_description}</p>
 </button>
 
@@ -25,10 +23,11 @@
         max-height: calc(6rem * var(--scale-down));
         position: absolute;
         left: calc(50% + var(--x-offset));
-        top: calc(50% + var(--y-offset));
+        top: calc(50% + var(--y-offset) + 4rem);
         translate: -50% -50%;
         background-color: lightgray;
         overflow: hidden;
+        z-index: 1;
     }
 
     p {
@@ -37,5 +36,6 @@
         max-height: 100%;
         margin: 0;
         text-align: center;
+        font-size: calc(1rem * var(--scale-down));
     }
 </style>

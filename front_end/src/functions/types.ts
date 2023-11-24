@@ -31,6 +31,14 @@ export type relation = {
     validity: validity
 }
 
+export type relationData = {
+    relation: relation,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+}
+
 export enum connective {
     and = "And",
     or = "Or",
