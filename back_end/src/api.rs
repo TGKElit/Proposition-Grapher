@@ -96,7 +96,6 @@ impl Api {
     async fn get_proposition(&self, id: Query<String>) -> Json<Proposition> {
         let id = Uuid::parse_str(id.as_ref()).unwrap();
         graph::get_proposition(id).await.unwrap()
-        //Json("ddd".to_string())
     }
 
     #[oai(path = "/truth", method = "post")]

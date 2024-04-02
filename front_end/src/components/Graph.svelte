@@ -122,6 +122,7 @@
         left: 0;
         width: 100%;
         height: calc(100% - 4rem);
+        z-index: -1;
     }
     line {
         stroke-width: 6;

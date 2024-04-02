@@ -6,6 +6,7 @@
     export let proposition_id: string;
     let search_query: string;
     let search_result: proposition[];
+    let search_box: string = "none";
 
 
     const search = (query: string) => {
@@ -18,6 +19,13 @@
             console.log(error);
             return [];
         })
+        search_box = "box";
+        console.log(search_box);
+    }
+
+    const close = () => {
+        search_box = "none";
+        console.log(search_box);
     }
 
 </script>
@@ -27,7 +35,8 @@
     <button on:click={() => search(search_query)}>Search</button>
 </section>
 {#if search_result}
-<section class="search-result">
+<section class="search-result" style="--search-box: {search_box}">
+    <button class="close-button" on:click={() => close()}>X</button>
     {#each search_result as proposition}
     <div class="search-item">
         <p>{proposition.lexical_description}</p>
@@ -65,5 +74,10 @@
         position: absolute;
         left: 0;
         top: 4rem;
+        display: var(--search-box);
+    }
+
+    .close-button {
+        
     }
 </style>

@@ -134,6 +134,7 @@ onMount(() => {
   
 <style>
   nav {
+    position: relative;
     height: 4rem;
     width: 100vw;
     top: 0;
