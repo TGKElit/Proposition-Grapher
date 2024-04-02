@@ -17,7 +17,7 @@ Then run ```npm run build``` or equivalent.
 Go to /back_end and install [rust and cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 Then run ```cargo run```
 
-If everything is setup correctly, the website should be running on localhost/3000.
+If everything is setup correctly, the website should be running on localhost:3000.
 
 ## Testing
 In /back_end, run ```cargo test```
