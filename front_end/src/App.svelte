@@ -3,10 +3,11 @@
 import { Route, Router, Link } from "svelte-routing";
 import Home from "./components/Home.svelte";
 import NewProposition from "./components/NewProposition.svelte";
+import PropositionRedirect from "./components/PropositionRedirect.svelte";
 import Proposition from "./components/Proposition.svelte";
 import { onMount } from "svelte";
 import Search from "./components/Search.svelte";
-  import Relation from "./components/Relation.svelte";
+import Relation from "./components/Relation.svelte";
 
 let response = "";
 let email: string;
@@ -124,6 +125,7 @@ onMount(() => {
       </section>
     </Route>
     <Route path="/new-proposition" component={NewProposition} />
+    <Route path="/proposition-redirect" component={PropositionRedirect}/>
     <Route path="/proposition" >
       <Proposition {loggedIn} bind:searching_for_argument bind:proposition_id={proposition_id}/>
     </Route>

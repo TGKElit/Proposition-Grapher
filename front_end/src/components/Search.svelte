@@ -30,18 +30,21 @@
 
 </script>
 
-<section class="search">
+<form class="search" on:submit|preventDefault={() => search(search_query)}>
     <input type="text" bind:value={search_query}>
-    <button on:click={() => search(search_query)}>Search</button>
-</section>
+    <button type="submit">Search</button>
+</form>
 {#if search_result}
 <section class="search-result" style="--search-box: {search_box}">
+    {#if search_result.length === 0}
+    <p>There are no matches</p>
+    {/if}
     <button class="close-button" on:click={() => close()}>X</button>
     {#each search_result as proposition}
     <div class="search-item">
         <p>{proposition.lexical_description}</p>
         <div>
-            <Link to="/proposition?id={proposition.id}">GOTO</Link>
+            <Link to="/proposition-redirect?id={proposition.id}">GOTO</Link>
         {#if searching_for_argument}
             <button on:click={() => add_argument( proposition_id, proposition.id)}>Add as argument</button>
         {/if}
@@ -78,6 +81,6 @@
     }
 
     .close-button {
-        
+        left: 1rem;
     }
 </style>

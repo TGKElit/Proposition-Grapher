@@ -98,7 +98,6 @@
 </script>
 <section>
     
-    
     <div class="row">
         {#if lexical_description}
         <p>{lexical_description}</p>
@@ -130,6 +129,7 @@
         <button on:click={() => {searching_for_argument = true}}>Add argument</button>
     </div>
     {/if}
+
     <div class="row">
         <div class="formalizations">
     {#each formalization_list as formalization}
@@ -146,6 +146,7 @@
     {/each}
         </div>
     </div>
+    
 </section>
 
 <style>

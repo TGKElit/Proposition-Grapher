@@ -1,4 +1,4 @@
-import type { atom, proposition } from './types';
+import type { atom, nodeData, proposition, relation, relationData} from './types';
 import { connective } from './types';
 
 export const add_argument = (proposition_id: string, argument_id: string) => {
@@ -281,4 +281,29 @@ export const arctan = (x: number, y: number) => {
 
     }
     return result;
+}
+
+
+export const updateRelationData = (relations: relation[], queue: nodeData[]) => {
+    let relationData: relationData[] = [];
+    if (relations) {
+        relations.forEach(relation => {
+            let x1: number = 0;
+            let y1: number = 0;
+            let x2: number = 0;
+            let y2: number = 0;
+            queue.forEach(node => {
+                if (relation.premise_id === node.node.node.id) {
+                    x1 = node.x_offset + window.innerWidth/2;
+                    y1 = node.y_offset + window.innerHeight/2;
+                }
+                if (relation.conclusion_id === node.node.node.id) {
+                    x2 = node.x_offset + window.innerWidth/2;
+                    y2 = node.y_offset + window.innerHeight/2;
+                }
+            });
+            relationData = [...relationData, {relation: relation, x1: x1, y1: y1, x2: x2, y2: y2}];
+        });
+    }
+    return relationData;
 }

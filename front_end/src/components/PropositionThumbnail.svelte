@@ -9,7 +9,7 @@
     export let steps_from_center: number;
     
 
-    let scale_down = (1 - steps_from_center / 7);
+    let scale_down = (1 - steps_from_center / 5);
 </script>
 
 <button style="--x-offset: {x_offset}px; --y-offset: {y_offset}px; --scale-down: {scale_down}" on:click={() => {navigate("/proposition?id=" + nodeObject.node.id)}}>

@@ -1,17 +1,16 @@
 <script lang="ts">
     import PropositionThumbnail from "./PropositionThumbnail.svelte";
     import type {nodes, nodeData, relation, relationData} from "../functions/types";
-    import { arctan } from "../functions/functions";
+    import { arctan, updateRelationData } from "../functions/functions";
     import { navigate } from "svelte-routing";
-    
-    
+
     export let nodeObject: nodes;
     export let relations: relation[];
     let visitedNodes = new Set<string>();
-    
-
     let nodesToQueue: nodeData[] = [{node: nodeObject, x_offset: 0, y_offset: 0, steps_from_center: 0}];
     let queue: nodeData[] = [];
+    let relationData: relationData[] = [];
+
     while (nodesToQueue.length > 0) {
         let currentLevelNodes = nodesToQueue;
         nodesToQueue = [];
@@ -51,26 +50,53 @@
         });
     };
 
-    let relationData: relationData[] = [];
-    if (relations) {
-        relations.forEach(relation => {
-            let x1: number = 0;
-            let y1: number = 0;
-            let x2: number = 0;
-            let y2: number = 0;
-            queue.forEach(node => {
-                if (relation.premise_id === node.node.node.id) {
-                    x1 = node.x_offset + window.innerWidth/2;
-                    y1 = node.y_offset + window.innerHeight/2;
-                }
-                if (relation.conclusion_id === node.node.node.id) {
-                    x2 = node.x_offset + window.innerWidth/2;
-                    y2 = node.y_offset + window.innerHeight/2;
-                }
-            });
-            relationData = [...relationData, {relation: relation, x1: x1, y1: y1, x2: x2, y2: y2}];
+    relationData = updateRelationData(relations, queue);
+
+    window.addEventListener('resize', () => relationData = updateRelationData(relations, queue));
+    
+    
+    for (let index = 1; index < 1000; index++) {
+        queue.forEach(node => {
+            if (node.steps_from_center !== 0) {
+                let velocity: [number, number] = [0, 0];
+                queue.forEach(forceNode => {
+                    if (forceNode !== node) {
+                        let distance: number = Math.sqrt(Math.pow(forceNode.x_offset-node.x_offset, 2) + Math.pow(forceNode.y_offset-node.y_offset, 2));
+                        let direction: [number, number] = [(node.x_offset-forceNode.x_offset)/distance, (node.y_offset-forceNode.y_offset)/distance];
+                        let speed: number = Math.abs(200000/Math.pow(distance, 2));
+                        velocity[0] += speed * direction[0] + Math.random()*100/index;
+                        velocity[1] += speed * direction[1] + Math.random()*100/index;
+                        if (node.steps_from_center === 1 && forceNode.steps_from_center === 0) {
+                            console.log("distance:" + distance + " speed: " + speed + " direction: " + direction);
+                        }
+                    }
+                })
+                relations.forEach(relation => {
+                    if (node.node.node.id === relation.premise_id || node.node.node.id === relation.conclusion_id) {
+                        relationData.forEach(relationDatum => {
+                            if (relationDatum.relation === relation) {
+                                let x1 = relationDatum.x1;
+                                let x2 = relationDatum.x2;
+                                let y1 = relationDatum.y1;
+                                let y2 = relationDatum.y2;
+                                let distance: number = Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2));
+                                let direction: [number, number] = (node.node.node.id === relation.premise_id ? [(x2-x1)/distance, (y2-y1)/distance] : [(x1-x2)/distance, (y1-y2)/distance]);
+                                let speed: number = (distance-200)/10;
+                                velocity[0] += speed * direction[0] * window.innerWidth / 1000;
+                                velocity[1] += speed * direction[1] * window.innerHeight / 1000;
+                                //console.log("distance:" + distance + " speed: " + speed + " direction: " + direction + " velocity: " + velocity);
+                            }
+                        })
+                    }
+                })
+                node.x_offset += velocity[0];
+                node.y_offset += velocity[1];
+            }
         });
+        relationData = updateRelationData(relations, queue);
+        //console.log(index);
     }
+
 
 </script>
 
@@ -122,7 +148,7 @@
         left: 0;
         width: 100%;
         height: calc(100% - 4rem);
-        z-index: -1;
+        z-index: 0;
     }
     line {
         stroke-width: 6;
