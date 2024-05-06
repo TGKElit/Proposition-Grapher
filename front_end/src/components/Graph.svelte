@@ -1,10 +1,11 @@
 <script lang="ts">
     import PropositionThumbnail from "./PropositionThumbnail.svelte";
-    import type {nodes, nodeData, relation, relationData} from "../functions/types";
+    import type {node, nodeData, relation, relationData} from "../functions/types";
     import { arctan, updateRelationData } from "../functions/functions";
     import { navigate } from "svelte-routing";
 
-    export let nodeObject: nodes;
+
+    export let nodeObject: node;
     export let relations: relation[];
     let visitedNodes = new Set<string>();
     let nodesToQueue: nodeData[] = [{node: nodeObject, x_offset: 0, y_offset: 0, steps_from_center: 0}];
@@ -15,11 +16,11 @@
         let currentLevelNodes = nodesToQueue;
         nodesToQueue = [];
         currentLevelNodes.forEach(currentNode => {
-            if (!visitedNodes.has(currentNode.node.node.id)) {
-                visitedNodes.add(currentNode.node.node.id);
+            if (!visitedNodes.has(currentNode.node.this.id)) {
+                visitedNodes.add(currentNode.node.this.id);
                 queue = [...queue, currentNode]
                 currentNode.node.premises.forEach(premise => {
-                    if (!visitedNodes.has(premise.node.id)) {
+                    if (!visitedNodes.has(premise.this.id)) {
                         let angle = Math.random() * 2 * Math.PI;
                         let steps_from_center = currentNode.steps_from_center + 1;
                         let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.cos(angle) * window.innerWidth / 4;
@@ -33,7 +34,7 @@
                     }
                 });
                 currentNode.node.conclusions.forEach(conclusion => {
-                    if (!visitedNodes.has(conclusion.node.id)) {
+                    if (!visitedNodes.has(conclusion.this.id)) {
                         let angle = Math.random() * 2 * Math.PI;
                         let steps_from_center = currentNode.steps_from_center + 1;
                         let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.cos(angle) * window.innerWidth / 4;
@@ -55,24 +56,31 @@
     window.addEventListener('resize', () => relationData = updateRelationData(relations, queue));
     
     
-    for (let index = 1; index < 1000; index++) {
-        queue.forEach(node => {
-            if (node.steps_from_center !== 0) {
-                let velocity: [number, number] = [0, 0];
-                queue.forEach(forceNode => {
-                    if (forceNode !== node) {
-                        let distance: number = Math.sqrt(Math.pow(forceNode.x_offset-node.x_offset, 2) + Math.pow(forceNode.y_offset-node.y_offset, 2));
-                        let direction: [number, number] = [(node.x_offset-forceNode.x_offset)/distance, (node.y_offset-forceNode.y_offset)/distance];
-                        let speed: number = Math.abs(200000/Math.pow(distance, 2));
-                        velocity[0] += speed * direction[0] + Math.random()*100/index;
-                        velocity[1] += speed * direction[1] + Math.random()*100/index;
-                        if (node.steps_from_center === 1 && forceNode.steps_from_center === 0) {
-                            console.log("distance:" + distance + " speed: " + speed + " direction: " + direction);
+
+    const simulation = (simulationLength: number) => {
+        let energy: number = 0;
+        
+        for (let index = 1; index <= simulationLength; index++) {
+            energy = 0;
+            queue.forEach(node => {
+
+                if (node.steps_from_center !== 0) {
+                    let velocity: [number, number] = [0, 0];
+                    //push away nodes from each other
+                    queue.forEach(forceNode => {
+                        if (forceNode !== node) {
+                            let distance: number = Math.sqrt(Math.pow(forceNode.x_offset-node.x_offset, 2) + Math.pow(forceNode.y_offset-node.y_offset, 2));
+                            distance = distance === 0 ? 1 : distance;
+                            let direction: [number, number] = [(node.x_offset-forceNode.x_offset)/distance, (node.y_offset-forceNode.y_offset)/distance];
+                            let speed: number = Math.abs(nodeRepulsion/Math.pow(distance, nodeRepulsionTaper)/(node.steps_from_center+forceNode.steps_from_center));
+                            velocity[0] += speed * direction[0];
+                            velocity[1] += speed * direction[1];
+                            energy += speed;
                         }
-                    }
-                })
-                relations.forEach(relation => {
-                    if (node.node.node.id === relation.premise_id || node.node.node.id === relation.conclusion_id) {
+                    })
+
+                    // keep edges certain length                
+                    relations.forEach(relation => {
                         relationData.forEach(relationDatum => {
                             if (relationDatum.relation === relation) {
                                 let x1 = relationDatum.x1;
@@ -80,25 +88,88 @@
                                 let y1 = relationDatum.y1;
                                 let y2 = relationDatum.y2;
                                 let distance: number = Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2));
-                                let direction: [number, number] = (node.node.node.id === relation.premise_id ? [(x2-x1)/distance, (y2-y1)/distance] : [(x1-x2)/distance, (y1-y2)/distance]);
-                                let speed: number = (distance-200)/10;
-                                velocity[0] += speed * direction[0] * window.innerWidth / 1000;
-                                velocity[1] += speed * direction[1] * window.innerHeight / 1000;
-                                //console.log("distance:" + distance + " speed: " + speed + " direction: " + direction + " velocity: " + velocity);
+                                distance = distance === 0 ? 1 : distance;
+                                if (node.node.this.id === relation.premise_id || node.node.this.id === relation.conclusion_id) {
+                                    let direction: [number, number] = (node.node.this.id === relation.premise_id ? [(x2-x1)/distance, (y2-y1)/distance] : [(x1-x2)/distance, (y1-y2)/distance]);
+                                    let speed: number = (distance-edgeLength/(Math.pow(relationDatum.steps_from_center, 1.2))) * edgeStrength;
+                                    velocity[0] += speed * direction[0];
+                                    velocity[1] += speed * direction[1];
+                                    energy += Math.abs(speed);
+                                }
                             }
-                        })
-                    }
-                })
-                node.x_offset += velocity[0];
-                node.y_offset += velocity[1];
-            }
-        });
-        relationData = updateRelationData(relations, queue);
-        //console.log(index);
+                        });
+                    })                  
+        
+                    // push away nodes from window border
+                    velocity[0] += - borderRepulsion * node.x_offset / Math.max(Math.pow(((window.innerWidth * simulationLength / index / 2 + node.x_offset) * (window.innerWidth * simulationLength / index / 2 - node.x_offset)), borderRepulsionTaper), 1);
+                    velocity[1] += - borderRepulsion * node.y_offset / Math.max(Math.pow(((window.innerHeight * simulationLength / index / 2 + node.y_offset) * (window.innerHeight * simulationLength / index / 2 - node.y_offset)), borderRepulsionTaper), 1);
+                    
+                    // cap velocity
+                    velocity[0] = Math.abs(velocity[0]) > window.innerWidth / 4 ? Math.sign(velocity[0]) * window.innerWidth / 4 : velocity[0];
+                    velocity[1] = Math.abs(velocity[1]) > window.innerHeight / 4 ? Math.sign(velocity[1]) * window.innerHeight / 4 : velocity[1];
+                    
+                    // apply velocity
+                    node.x_offset += velocity[0];
+                    node.y_offset += velocity[1];
+                    
+                    // cap offset
+                    node.x_offset = Math.abs(node.x_offset) >= window.innerWidth / 2 ? Math.sign(node.x_offset) * window.innerWidth / 2 : node.x_offset;
+                    node.y_offset = Math.abs(node.y_offset) >= window.innerHeight / 2 ? Math.sign(node.y_offset) * window.innerHeight / 2 : node.y_offset;
+                    
+                }
+            });
+            relationData = updateRelationData(relations, queue);
+            queue = queue;
+        }
+        finalEnergy = energy;
     }
 
+    const simulatedAnnealing = () => {
+        let currentQueue = queue;
+        let bestSolutionQueue = queue;
+        let bestSolutionEnergy = 1000;
+        for (let temperature = startTemperature; temperature > 0; temperature--) {
+            let previousRelationData = relationData;
+            let previousQueue = currentQueue;
+            let previousEnergy = finalEnergy;
+            currentQueue.forEach(node => {
+                if (node.steps_from_center !== 0) {
+                    node.x_offset += (Math.random()-0.5)*200;
+                    node.y_offset += (Math.random()-0.5)*200;
+                }
+            });
+            queue = currentQueue;
+            simulation(500);
+            if (finalEnergy < bestSolutionEnergy) {
+                bestSolutionQueue = currentQueue;
+                bestSolutionEnergy = finalEnergy;
+            }
+            let changeProbability = finalEnergy < previousEnergy ? 1 : Math.exp((finalEnergy - previousEnergy)/temperature);
+            if (Math.random() > changeProbability) {
+                currentQueue = previousQueue;
+                relationData = previousRelationData;
+            }
+        }
+        queue = bestSolutionQueue;
+        simulation(500);
+    }
+
+    let startTemperature = 100;
+    let edgeLength = 300;
+    let edgeStrength = 0.1;
+    let nodeRepulsion = 200000000;
+    let nodeRepulsionTaper = 3;
+    let borderRepulsion = 1600000000;
+    let borderRepulsionTaper = 2;
+
+    let finalEnergy: number = 0;
+    $: finalEnergy;
+
+    simulatedAnnealing();
 
 </script>
+
+
 
 {#each queue as node}
 <PropositionThumbnail nodeObject={node.node} x_offset={node.x_offset} y_offset={node.y_offset} steps_from_center={node.steps_from_center}/>
@@ -107,7 +178,8 @@
 {#if relations}
 <svg>
     {#each relationData as relation}
-    <line 
+    <line
+        style="--stroke-width: {7 - relation.steps_from_center}"
         on:click={() => navigate("/relation?id=" + relation.relation.id)} 
         on:keypress={() => navigate("relation")}
         tabindex=0
@@ -116,7 +188,8 @@
         y1={relation.y1}
         x2={relation.x2}
         y2={relation.y2}/>
-    <line 
+    <line
+        style="--stroke-width: {7 - relation.steps_from_center}"
         on:click={() => navigate("/relation?id=" + relation.relation.id)} 
         on:keypress={() => navigate("relation")}
         tabindex=0
@@ -127,6 +200,7 @@
         y2={(relation.y1 + relation.y2)/ 2 + Math.sin(-arctan(relation.y2-relation.y1,relation.x2-relation.x1)-1/4*Math.PI)*16}
     />
     <line
+        style="--stroke-width: {7 - relation.steps_from_center}" 
         on:click={() => navigate("/relation?id=" + relation.relation.id)} 
         on:keypress={() => navigate("relation")}
         tabindex=0
@@ -151,7 +225,7 @@
         z-index: 0;
     }
     line {
-        stroke-width: 6;
+        stroke-width: var(--stroke-width);
         stroke: black;
         position: absolute;
         cursor: pointer;

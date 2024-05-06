@@ -1,9 +1,9 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import Graph from './Graph.svelte';
-    import type {nodes, relation} from '../functions/types';
+    import type {node, relation} from '../functions/types';
 
-    let nodeObject: nodes;
+    let nodeObject: node;
     let relations: relation[] = [];
 
     onMount(async () => {
@@ -15,7 +15,7 @@
         })
         .then(response => response.json())
         .then(data => {
-            nodeObject = data.nodes;
+            nodeObject = data.node;
             relations = data.relations;
             console.log(data);
         }).catch(error => {

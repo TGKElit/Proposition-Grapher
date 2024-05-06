@@ -7,16 +7,16 @@ use sqlx::types::Uuid;
 use super::{Proposition, Relation, PropositionalFormalization};
 
 #[derive(Clone, Object, Debug)]
-pub struct Nodes {
-    node: Proposition,
-    premises: Vec<Box<Nodes>>,
-    conclusions: Vec<Box<Nodes>>
+pub struct Node {
+    this: Proposition,
+    premises: Vec<Box<Node>>,
+    conclusions: Vec<Box<Node>>
 
 }
 
 #[derive(Clone, Object, Debug)]
 pub struct Graph {
-    nodes: Nodes,
+    node: Node,
     relations: Vec<Relation>
 }
 
@@ -24,9 +24,9 @@ pub struct Graph {
 async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Error>>{
     
     if depth > 0 {
-        let premises = super::get_premises(graph.nodes.node.id).await?;
-        let conclusions = super::get_conclusions(graph.nodes.node.id).await?;
-        let relations = super::get_relations(graph.nodes.node.id).await?;
+        let premises = super::get_premises(graph.node.this.id).await?;
+        let conclusions = super::get_conclusions(graph.node.this.id).await?;
+        let relations = super::get_relations(graph.node.this.id).await?;
 
         for relation in relations {
             if !graph.relations.contains(&relation) {
@@ -35,9 +35,9 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
         }        
 
         for premise in premises {
-            let sub_graph = generate_graph(Graph { nodes: Nodes { node: premise, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
-            graph.nodes.premises.push(
-                Box::new(sub_graph.nodes)
+            let sub_graph = generate_graph(Graph { node: Node { this: premise, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
+            graph.node.premises.push(
+                Box::new(sub_graph.node)
             );
             for relation in sub_graph.relations {
                 if !graph.relations.contains(&relation) {
@@ -46,9 +46,9 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
             }
         }
         for conclusion in conclusions {
-            let sub_graph = generate_graph(Graph { nodes: Nodes { node: conclusion, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
-            graph.nodes.conclusions.push(
-                Box::new(sub_graph.nodes)
+            let sub_graph = generate_graph(Graph { node: Node { this: conclusion, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
+            graph.node.conclusions.push(
+                Box::new(sub_graph.node)
             );
             for relation in sub_graph.relations {
                 if !graph.relations.contains(&relation) {
@@ -63,7 +63,7 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
 
 pub async fn get_graph(center_node_id: Option<Uuid>, depth: u8) -> Result<Json<Graph>, Box<dyn Error>> {
     let center_node: Proposition;
-    let nodes: Nodes;
+    let node: Node;
     let graph: Graph;
     if center_node_id.is_some() {
         center_node = super::get_proposition(center_node_id.unwrap()).await?;
@@ -71,13 +71,13 @@ pub async fn get_graph(center_node_id: Option<Uuid>, depth: u8) -> Result<Json<G
     else {
         center_node = super::get_random_proposition().await?;
     }
-    nodes = Nodes {
-        node: center_node,
+    node = Node {
+        this: center_node,
         premises: vec![],
         conclusions: vec![],
     };
     graph = Graph {
-        nodes: nodes,
+        node: node,
         relations: vec![]
     };
     println!("{:?}", graph.relations);

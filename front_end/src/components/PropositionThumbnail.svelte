@@ -1,9 +1,9 @@
 <script lang="ts">
 
     import { Link, navigate } from "svelte-routing";
-    import type { nodes } from '../functions/types';
+    import type { node } from '../functions/types';
 
-    export let nodeObject: nodes;
+    export let nodeObject: node;
     export let x_offset: number;
     export let y_offset: number;
     export let steps_from_center: number;
@@ -12,8 +12,8 @@
     let scale_down = (1 - steps_from_center / 5);
 </script>
 
-<button style="--x-offset: {x_offset}px; --y-offset: {y_offset}px; --scale-down: {scale_down}" on:click={() => {navigate("/proposition?id=" + nodeObject.node.id)}}>
-        <p>{nodeObject.node.lexical_description}</p>
+<button style="--x-offset: {x_offset}px; --y-offset: {y_offset}px; --scale-down: {scale_down}" on:click={() => {navigate("/proposition?id=" + nodeObject.this.id)}}>
+        <p>{nodeObject.this.lexical_description}</p>
 </button>
 
 <style>

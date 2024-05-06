@@ -45,8 +45,8 @@
         <p>{proposition.lexical_description}</p>
         <div>
             <Link to="/proposition-redirect?id={proposition.id}">GOTO</Link>
-        {#if searching_for_argument}
-            <button on:click={() => add_argument( proposition_id, proposition.id)}>Add as argument</button>
+        {#if searching_for_argument && proposition_id !== proposition.id}
+            <button on:click={() => add_argument(proposition_id, proposition.id)}>Add as argument</button>
         {/if}
         </div>
     </div>

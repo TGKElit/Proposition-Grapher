@@ -1,18 +1,18 @@
 
 
-export type nodes = {
-    node: {
+export type node = {
+    this: {
         id: string,
         lexical_description: string,
         profile_id: string,
         truth_score: number
     },
-    premises: nodes[],
-    conclusions: nodes[]
+    premises: node[],
+    conclusions: node[]
 };
 
 export type nodeData = {
-    node: nodes,
+    node: node,
     x_offset: number,
     y_offset: number,
     steps_from_center: number
@@ -36,7 +36,8 @@ export type relationData = {
     x1: number,
     y1: number,
     x2: number,
-    y2: number
+    y2: number,
+    steps_from_center: number
 }
 
 export enum connective {

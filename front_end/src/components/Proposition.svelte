@@ -13,6 +13,8 @@
     let formalization_invalid: string = "";
     let formalization_list: formalization[] = [];
     let params = new URLSearchParams(location.search);
+    let formalization_error: string = "";
+    let test: string = "successful";
 
 
     onMount(() => proposition_id = "" + params.get("id"))
@@ -31,6 +33,10 @@
             return [];
         })
 
+        fetch_formalization_list();
+    }
+
+    const fetch_formalization_list = () => {
         fetch("/api/formalization-list?id=" + proposition_id)
         .then(response => response.json())
         .then(data => {
@@ -62,6 +68,8 @@
                 }).then(response => response.json())
                 .then(data => {
                     fetch_proposition();
+                }).catch(error => {
+                    console.log("Vote proposition error: " + error);
                 });
                 break;
             case "formalization":
@@ -74,25 +82,41 @@
                     body: JSON.stringify(body)
                 }).then(response => response.json())
                 .then(data => {
-                    fetch_proposition();
+                    fetch_formalization_list();
+                }).catch(error => {
+                    console.log("Vote formalization error: " + error);
                 });
                 break;
         }
     }
 
     const suggest_formalization = (formalization_string: string) => {
-        let body = {
-            formalization_string: JSON.stringify(parser(lexer(formalization_string))),
-            proposition_id: proposition_id
+        formalization_error = "";
+        try {
+            let body = {
+                formalization_string: JSON.stringify(parser(lexer(formalization_string))),
+                proposition_id: proposition_id
+            }
+            fetch("/api/formalization", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            }).then(response => response.json())
+            .then(data => {
+                formalization_error = data;
+                fetch_proposition();
+                test = "successful";
+            }).catch(error => {
+                test = "unsuccessful";
+                formalization_error = error;
+                return [];
+            })
+        } catch (error) {
+            test = "unsuccessful";
+            error instanceof Error ? formalization_error = error.message : formalization_error = "Unknown error"; 
         }
-        console.log(body);
-        fetch("/api/formalization", {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        })
     }
     
 </script>
@@ -125,6 +149,7 @@
         </div>
                 {/if}
         <button on:click={() => {suggest_formalization(formalization_string)}}>Publish</button>
+        <p class="{test}">{formalization_error}</p>
             {/if}
         <button on:click={() => {searching_for_argument = true}}>Add argument</button>
     </div>
@@ -162,6 +187,14 @@
     }
 
     .invalid {
+        color: red;
+    }
+
+    .successful {
+        color: green;
+    }
+
+    .unsuccessful {
         color: red;
     }
 
