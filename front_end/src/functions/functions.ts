@@ -1,13 +1,12 @@
 import type { atom, nodeData, proposition, relation, relationData} from './types';
 import { connective } from './types';
 
-export const add_argument = (proposition_id: string, argument_id: string) => {
+export const add_argument = async (proposition_id: string, argument_id: string): Promise<string> => {
     let body = {
         premise_id: argument_id,
         conclusion_id: proposition_id
     }
-
-    fetch("/api/relation", {
+    let response:string = await fetch("/api/relation", {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -16,11 +15,11 @@ export const add_argument = (proposition_id: string, argument_id: string) => {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data);
+        return data;
     }).catch(error => {
-        console.log(error);
-        return [];
+        return error;
     })
+    return response;
 }
 
 // parser
@@ -270,7 +269,7 @@ export const proposition_display = (tokens: { token: string; type: string; }[]) 
     return [valid_string, invalid_string];
 }
 
-export const arctan = (x: number, y: number) => {
+export const arctan = (x: number, y: number): number => {
     let result = Math.atan(y/x);
     if (x < 0) {
         if (y > 0) {

@@ -7,6 +7,7 @@
     let search_query: string;
     let search_result: proposition[];
     let search_box: string = "none";
+    let argument_response: string = "";
 
 
     const search = (query: string) => {
@@ -46,11 +47,12 @@
         <div>
             <Link to="/proposition-redirect?id={proposition.id}">GOTO</Link>
         {#if searching_for_argument && proposition_id !== proposition.id}
-            <button on:click={() => add_argument(proposition_id, proposition.id)}>Add as argument</button>
+            <button on:click={async () => argument_response = await add_argument(proposition_id, proposition.id)}>Add as argument</button>
         {/if}
         </div>
     </div>
     {/each}
+    <p>{argument_response}</p>
 </section>
 {/if}
 
