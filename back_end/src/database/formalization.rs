@@ -1,5 +1,5 @@
 use std::collections::{HashSet, HashMap};
-use itertools::Itertools;
+use itertools::{repeat_n, Itertools};
 
 
 use serde::{Deserialize, Serialize};
@@ -85,7 +85,7 @@ fn check_truth(proposition: Formalization, truth_assignments: &HashMap<(Formula,
 fn generate_assignment_matrix(atoms: HashSet<(Formula, Option<String>)>) -> Result<Vec<HashMap<(Formula, Option<String>), bool>>> {
     let mut assignment_matrix: Vec<HashMap<(Formula, Option<String>), bool>> = vec![];
     let atom_length = (&atoms).len();
-    let assignment_vectors: Vec<Vec<bool>> = [true, false].into_iter().combinations_with_replacement((&atoms).len()).collect();
+    let assignment_vectors: Vec<Vec<bool>> = repeat_n([true, false], (&atoms).len()).multi_cartesian_product().collect();//[true, false].into_iter().combinations_with_replacement((&atoms).len()).collect();
     let atoms_vec: Vec<(Formula, Option<String>)> = atoms.into_iter().collect();
     for truth_vec in assignment_vectors {
         let mut truth_map: HashMap<(Formula, Option<String>), bool> = HashMap::new();
@@ -104,6 +104,9 @@ fn check_validity(premise: Formalization, conclusion: Formalization) -> Result<V
     let assignment_matrix = generate_assignment_matrix(atoms)?;
     let mut possibly_valid = true;
     let mut possibly_antivalid = true;
+
+    println!("ASS MAT: {:#?}", assignment_matrix);
+    println!();
     
     for truth_assignments in assignment_matrix {
         let premise_truth = check_truth(premise.clone(), &truth_assignments)?;
@@ -115,6 +118,7 @@ fn check_validity(premise: Formalization, conclusion: Formalization) -> Result<V
             possibly_antivalid = false;
         }
     }
+    
 
     if possibly_valid {
         Ok(Validity::Valid)
