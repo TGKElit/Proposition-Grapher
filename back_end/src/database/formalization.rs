@@ -104,9 +104,6 @@ fn check_validity(premise: Formalization, conclusion: Formalization) -> Result<V
     let assignment_matrix = generate_assignment_matrix(atoms)?;
     let mut possibly_valid = true;
     let mut possibly_antivalid = true;
-
-    println!("ASS MAT: {:#?}", assignment_matrix);
-    println!();
     
     for truth_assignments in assignment_matrix {
         let premise_truth = check_truth(premise.clone(), &truth_assignments)?;
@@ -215,7 +212,7 @@ mod tests {
 
     #[test]
     fn validity() {
-        let premise_str = r#" {
+        let premise_str = r#" 
             "uuid":null,
             "negated":false,
             "formula":{

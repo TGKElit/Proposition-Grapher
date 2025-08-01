@@ -112,7 +112,6 @@ impl Api {
 
     #[oai(path = "/correctness", method = "post")]
     async fn post_correctness(&self, request: Json<VoteRequest>, session: &Session) -> Json<String> {
-        println!("Found");
         let username = session.get("username").unwrap();
         if auth::is_logged_in(session.get("username"), session.get("session_id")).await.unwrap() {
             let profile_id = graph::get_profile_id(username).await.unwrap();
@@ -124,8 +123,12 @@ impl Api {
     }
 
     #[oai(path = "/graph", method = "get")]
-    async fn get_graph(&self, depth: Query<u8>) -> Json<Graph> {
-        let center_node_id: Option<Uuid> = None;
+    async fn get_graph(&self, depth: Query<u8>, id: Query<Option<String>>) -> Json<Graph> {
+        println!("Graph endpoint called");
+        let mut center_node_id: Option<Uuid> = None;
+        if id.is_some() {
+            center_node_id = Some(Uuid::parse_str(id.as_ref().unwrap()).unwrap());
+        }
         graph::get_graph(center_node_id, *depth).await.unwrap()
     }
 

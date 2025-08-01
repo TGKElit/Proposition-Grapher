@@ -1,62 +1,61 @@
 <script lang="ts">
     import PropositionThumbnail from "./PropositionThumbnail.svelte";
+    import RelationThumbnail from "./RelationThumbnail.svelte";
     import type {node, nodeData, relation, relationData} from "../functions/types";
-    import { arctan, updateRelationData } from "../functions/functions";
-    import { navigate } from "svelte-routing";
+    import { updateRelationData } from "../functions/functions";
+    import { tweened } from "svelte/motion";
 
-
+    export let handle_thumbnail_click;
     export let nodeObject: node;
     export let relations: relation[];
-    let visitedNodes = new Set<string>();
-    let nodesToQueue: nodeData[] = [{node: nodeObject, x_offset: 0, y_offset: 0, steps_from_center: 0}];
+    
     let queue: nodeData[] = [];
     let relationData: relationData[] = [];
 
-    while (nodesToQueue.length > 0) {
-        let currentLevelNodes = nodesToQueue;
-        nodesToQueue = [];
-        currentLevelNodes.forEach(currentNode => {
-            if (!visitedNodes.has(currentNode.node.this.id)) {
-                visitedNodes.add(currentNode.node.this.id);
-                queue = [...queue, currentNode]
-                currentNode.node.premises.forEach(premise => {
-                    if (!visitedNodes.has(premise.this.id)) {
-                        let angle = Math.random() * 2 * Math.PI;
-                        let steps_from_center = currentNode.steps_from_center + 1;
-                        let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.cos(angle) * window.innerWidth / 4;
-                        let y_offset = currentNode.y_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.sin(angle) * window.innerHeight / 4;
-                        nodesToQueue = [...nodesToQueue, {
-                            node: premise,
-                            x_offset: x_offset,
-                            y_offset: y_offset,
-                            steps_from_center: steps_from_center
-                        }]
-                    }
-                });
-                currentNode.node.conclusions.forEach(conclusion => {
-                    if (!visitedNodes.has(conclusion.this.id)) {
-                        let angle = Math.random() * 2 * Math.PI;
-                        let steps_from_center = currentNode.steps_from_center + 1;
-                        let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.cos(angle) * window.innerWidth / 4;
-                        let y_offset = currentNode.y_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.sin(angle) * window.innerHeight / 4;
-                        nodesToQueue = [...nodesToQueue, {
-                            node: conclusion,
-                            x_offset: x_offset,
-                            y_offset: y_offset,
-                            steps_from_center: steps_from_center
-                        }]
-                    }
-                });
-            }
-        });
-    };
-
-    relationData = updateRelationData(relations, queue);
-
-    window.addEventListener('resize', () => relationData = updateRelationData(relations, queue));
+    const queueNodes = () => {
+        let visitedNodes = new Set<string>();
+        let nodesToQueue: nodeData[] = [{node: nodeObject, x_offset: 0, y_offset: 0, steps_from_center: 0}];
+        queue = [];
+        while (nodesToQueue.length > 0) {
+            let currentLevelNodes = nodesToQueue;
+            nodesToQueue = [];
+            currentLevelNodes.forEach(currentNode => {
+                if (!visitedNodes.has(currentNode.node.this.id)) {
+                    visitedNodes.add(currentNode.node.this.id);
+                    queue = [...queue, currentNode]
+                    currentNode.node.premises.forEach(premise => {
+                        if (!visitedNodes.has(premise.this.id)) {
+                            let angle = Math.random() * 2 * Math.PI;
+                            let steps_from_center = currentNode.steps_from_center + 1;
+                            let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.cos(angle) * window.innerWidth / 4;
+                            let y_offset = currentNode.y_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.sin(angle) * window.innerHeight / 4;
+                            nodesToQueue = [...nodesToQueue, {
+                                node: premise,
+                                x_offset: x_offset,
+                                y_offset: y_offset,
+                                steps_from_center: steps_from_center
+                            }]
+                        }
+                    });
+                    currentNode.node.conclusions.forEach(conclusion => {
+                        if (!visitedNodes.has(conclusion.this.id)) {
+                            let angle = Math.random() * 2 * Math.PI;
+                            let steps_from_center = currentNode.steps_from_center + 1;
+                            let x_offset = currentNode.x_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.cos(angle) * window.innerWidth / 4;
+                            let y_offset = currentNode.y_offset + Math.pow(1-steps_from_center/4, 0.4) * Math.sin(angle) * window.innerHeight / 4;
+                            nodesToQueue = [...nodesToQueue, {
+                                node: conclusion,
+                                x_offset: x_offset,
+                                y_offset: y_offset,
+                                steps_from_center: steps_from_center
+                            }]
+                        }
+                    });
+                }
+            });
+        };
+    }
     
-    
-
     const simulation = (simulationLength: number) => {
         let energy: number = 0;
         
@@ -120,6 +119,7 @@
             });
             relationData = updateRelationData(relations, queue);
             queue = queue;
+            
         }
         finalEnergy = energy;
     }
@@ -163,57 +163,31 @@
     let borderRepulsionTaper = 2;
 
     let finalEnergy: number = 0;
-    $: finalEnergy;
 
+    queueNodes();
+
+    relationData = updateRelationData(relations, queue);
+
+    window.addEventListener('resize', () => relationData = updateRelationData(relations, queue));
+
+    $: nodeObject, queueNodes(), relationData = updateRelationData(relations, queue), simulatedAnnealing();
     simulatedAnnealing();
+
+    let x1 = tweened(100)
 
 </script>
 
-
-
-{#each queue as node}
-<PropositionThumbnail nodeObject={node.node} x_offset={node.x_offset} y_offset={node.y_offset} steps_from_center={node.steps_from_center}/>
+{#each queue as node (node.node.this.id)}
+<PropositionThumbnail bind:nodeData={node} handle_click={handle_thumbnail_click}/>
 {/each}
 
 {#if relations}
 <svg>
-    {#each relationData as relation}
-    <line
-        style="--stroke-width: {7 - relation.steps_from_center}"
-        on:click={() => navigate("/relation?id=" + relation.relation.id)} 
-        on:keypress={() => navigate("relation")}
-        tabindex=0
-        role="link"
-        x1={relation.x1}
-        y1={relation.y1}
-        x2={relation.x2}
-        y2={relation.y2}/>
-    <line
-        style="--stroke-width: {7 - relation.steps_from_center}"
-        on:click={() => navigate("/relation?id=" + relation.relation.id)} 
-        on:keypress={() => navigate("relation")}
-        tabindex=0
-        role="link"
-        x1={(relation.x1 + relation.x2) / 2}
-        y1={(relation.y1 + relation.y2)/ 2}
-        x2={(relation.x1 + relation.x2) / 2 + Math.cos(-arctan(relation.y2-relation.y1,relation.x2-relation.x1)-1/4*Math.PI)*16}
-        y2={(relation.y1 + relation.y2)/ 2 + Math.sin(-arctan(relation.y2-relation.y1,relation.x2-relation.x1)-1/4*Math.PI)*16}
-    />
-    <line
-        style="--stroke-width: {7 - relation.steps_from_center}" 
-        on:click={() => navigate("/relation?id=" + relation.relation.id)} 
-        on:keypress={() => navigate("relation")}
-        tabindex=0
-        role="link"
-        x1={(relation.x1 + relation.x2) / 2}
-        y1={(relation.y1 + relation.y2)/ 2}
-        x2={(relation.x1 + relation.x2) / 2 + Math.cos(-arctan(relation.y2-relation.y1,relation.x2-relation.x1)-3/4*Math.PI)*16}
-        y2={(relation.y1 + relation.y2)/ 2 + Math.sin(-arctan(relation.y2-relation.y1,relation.x2-relation.x1)-3/4*Math.PI)*16}
-    />
+    {#each relationData as relation (relation.relation.id)}
+    <RelationThumbnail relation={relation}/>
     {/each}
 </svg>
 {/if}
-
 
 <style>
     svg {
@@ -224,10 +198,5 @@
         height: calc(100% - 4rem);
         z-index: 0;
     }
-    line {
-        stroke-width: var(--stroke-width);
-        stroke: black;
-        position: absolute;
-        cursor: pointer;
-    }
 </style>
+    

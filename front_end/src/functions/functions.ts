@@ -1,4 +1,4 @@
-import type { atom, nodeData, proposition, relation, relationData} from './types';
+import type { atom, formalization, nodeData, proposition, relation, relationData} from './types';
 import { connective } from './types';
 
 export const add_argument = async (proposition_id: string, argument_id: string): Promise<string> => {
@@ -292,15 +292,16 @@ export const updateRelationData = (relations: relation[], queue: nodeData[]) => 
             let x2: number = 0;
             let y2: number = 0;
             let stepsFromCenter: number = 0;
+            //don't know why i need to add 8 to heights...
             queue.forEach(node => {
                 if (relation.premise_id === node.node.this.id) {
                     x1 = node.x_offset + window.innerWidth/2;
-                    y1 = node.y_offset + window.innerHeight/2;
+                    y1 = node.y_offset + window.innerHeight/2 + 8;
                     stepsFromCenter = Math.max(node.steps_from_center, stepsFromCenter);
                 }
                 if (relation.conclusion_id === node.node.this.id) {
                     x2 = node.x_offset + window.innerWidth/2;
-                    y2 = node.y_offset + window.innerHeight/2;
+                    y2 = node.y_offset + window.innerHeight/2 + 8;
                     stepsFromCenter = Math.max(node.steps_from_center, stepsFromCenter);
                 }
             });
@@ -308,4 +309,29 @@ export const updateRelationData = (relations: relation[], queue: nodeData[]) => 
         });
     }
     return relationData;
+}
+
+export const fetch_formalization_list = (proposition_id: string) => {
+    return fetch("/api/formalization-list?id=" + proposition_id)
+    .then(response => response.json())
+    .then(data => {
+        return data.sort((a:formalization, b:formalization) => b.correctness_score - a.correctness_score);;
+    }).catch(error => {
+        console.log(error);
+        return [];
+    })
+}
+
+export const fetch_proposition = async (proposition_id: string): Promise<[string, number, formalization[]]> => {
+   
+    let [lexical_description, truth_score]: [string, number] = await fetch("/api/proposition?id=" + proposition_id)
+    .then(response => response.json())
+    .then((data): [string, number] => {
+        return [data.lexical_description, data.truth_score]
+    }).catch(error => {
+        throw new error;
+    })
+
+    let formalization_list: formalization[] = await fetch_formalization_list(proposition_id);
+    return [lexical_description, truth_score, formalization_list];
 }

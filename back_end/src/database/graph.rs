@@ -22,7 +22,6 @@ pub struct Graph {
 
 #[async_recursion]
 async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Error>>{
-    
     if depth > 0 {
         let premises = super::get_premises(graph.node.this.id).await?;
         let conclusions = super::get_conclusions(graph.node.this.id).await?;
@@ -32,7 +31,7 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
             if !graph.relations.contains(&relation) {
                 graph.relations.push(relation);
             }
-        }        
+        }
 
         for premise in premises {
             let sub_graph = generate_graph(Graph { node: Node { this: premise, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
@@ -45,6 +44,7 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
                 }
             }
         }
+
         for conclusion in conclusions {
             let sub_graph = generate_graph(Graph { node: Node { this: conclusion, premises: vec![], conclusions: vec![] }, relations: graph.relations.clone() }, depth-1).await?;
             graph.node.conclusions.push(
@@ -57,7 +57,6 @@ async fn generate_graph(mut graph: Graph, depth: u8) -> Result<Graph, Box<dyn Er
             }
         }
     }
-
     Ok(graph)
 }
 
@@ -80,7 +79,6 @@ pub async fn get_graph(center_node_id: Option<Uuid>, depth: u8) -> Result<Json<G
         node: node,
         relations: vec![]
     };
-    println!("{:?}", graph.relations);
 
     Ok(Json(generate_graph(graph, depth).await?))
 

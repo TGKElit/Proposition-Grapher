@@ -20,6 +20,8 @@ let proposition_id: string = "";
 type view = "login" | "register";
 type endpoint = "register" | "login" | "logout";
 
+$: ;
+
 const callApi = (email: string, username: string, password: string, endpoint: endpoint) => {
     let body;
     switch (endpoint) {
@@ -96,7 +98,7 @@ onMount(() => {
   <Router>
     <nav>
       <Link to="/">Home</Link>
-      <Search bind:searching_for_argument bind:proposition_id/>
+      <Search bind:searching_for_argument={searching_for_argument} bind:proposition_id/>
       {#if loggedIn}
       <Link to="/new-proposition">New Proposition</Link>
       <button on:click={() => {callApi(email, username, password, "logout")}}>Logout</button>

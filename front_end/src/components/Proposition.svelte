@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { proposition_display, lexer, parser, inverse_parser } from '../functions/functions';
+    import { proposition_display, lexer, parser, inverse_parser, fetch_formalization_list, fetch_proposition } from '../functions/functions';
     import type { formalization } from '../functions/types';
+    import { navigate } from 'svelte-routing';
     export let loggedIn: boolean;
     export let searching_for_argument: boolean;
     export let proposition_id: string;
@@ -13,42 +14,18 @@
     let formalization_invalid: string = "";
     let formalization_list: formalization[] = [];
     let params = new URLSearchParams(location.search);
-    let formalization_error: string = "";
+    let post_formalization_response: string = "";
     let test: string = "successful";
 
-
-    onMount(() => proposition_id = "" + params.get("id"))
+    onMount(() => {
+        proposition_id = "" + params.get("id");
+    });
     
 
     $: [formalization_valid, formalization_invalid] = proposition_display(lexer(formalization_string));
 
-    const fetch_proposition = () => {
-        fetch("/api/proposition?id=" + proposition_id)
-        .then(response => response.json())
-        .then(data => {
-            lexical_description = data.lexical_description;
-            truth_score = data.truth_score;
-        }).catch(error => {
-            console.log(error);
-            return [];
-        })
-
-        fetch_formalization_list();
-    }
-
-    const fetch_formalization_list = () => {
-        fetch("/api/formalization-list?id=" + proposition_id)
-        .then(response => response.json())
-        .then(data => {
-            formalization_list = data.sort((a:formalization, b:formalization) => b.correctness_score - a.correctness_score);;
-        }).catch(error => {
-            console.log(error);
-            return [];
-        })
-    }
-
     onMount(async () => {
-        fetch_proposition();
+        [lexical_description, truth_score, formalization_list] = await fetch_proposition(proposition_id);
     });
 
     const vote = (vote: boolean, id = proposition_id, votee = "proposition") => {
@@ -58,7 +35,6 @@
         }
         switch (votee) {
             case "proposition":
-
                 fetch("/api/truth", {
                     method: "POST",
                     headers: {
@@ -66,8 +42,8 @@
                     },
                     body: JSON.stringify(body)
                 }).then(response => response.json())
-                .then(data => {
-                    fetch_proposition();
+                .then(async (data) => {
+                    [lexical_description, truth_score, formalization_list] = await fetch_proposition(proposition_id);
                 }).catch(error => {
                     console.log("Vote proposition error: " + error);
                 });
@@ -81,8 +57,8 @@
                     },
                     body: JSON.stringify(body)
                 }).then(response => response.json())
-                .then(data => {
-                    fetch_formalization_list();
+                .then(async (data) => {
+                    formalization_list = await fetch_formalization_list(proposition_id);
                 }).catch(error => {
                     console.log("Vote formalization error: " + error);
                 });
@@ -91,7 +67,7 @@
     }
 
     const suggest_formalization = (formalization_string: string) => {
-        formalization_error = "";
+        post_formalization_response = "";
         try {
             let body = {
                 formalization_string: JSON.stringify(parser(lexer(formalization_string))),
@@ -104,24 +80,24 @@
                 },
                 body: JSON.stringify(body)
             }).then(response => response.json())
-            .then(data => {
-                formalization_error = data;
-                fetch_proposition();
+            .then(async (data) => {
+                post_formalization_response = data;
+                [lexical_description, truth_score, formalization_list] = await fetch_proposition(proposition_id);
                 test = "successful";
             }).catch(error => {
                 test = "unsuccessful";
-                formalization_error = error;
+                post_formalization_response = error;
                 return [];
             })
         } catch (error) {
             test = "unsuccessful";
-            error instanceof Error ? formalization_error = error.message : formalization_error = "Unknown error"; 
+            error instanceof Error ? post_formalization_response = error.message : post_formalization_response = "Unknown error"; 
         }
     }
     
 </script>
 <section>
-    
+    <button class="close-button" on:click={() => navigate("/?id=" + proposition_id)}>X</button>
     <div class="row">
         {#if lexical_description}
         <p>{lexical_description}</p>
@@ -149,9 +125,9 @@
         </div>
                 {/if}
         <button on:click={() => {suggest_formalization(formalization_string)}}>Publish</button>
-        <p class="{test}">{formalization_error}</p>
+        <p class="{test}">{post_formalization_response}</p>
             {/if}
-        <button on:click={() => {searching_for_argument = true}}>Add argument</button>
+        <button on:click={() => {searching_for_argument = !searching_for_argument}}>{searching_for_argument ? "Cancel" : "Add argument"}</button>
     </div>
     {/if}
 

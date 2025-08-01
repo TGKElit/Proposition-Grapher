@@ -1,15 +1,14 @@
 <script lang="ts">
     import { Link } from "svelte-routing";
-    import proposition from "./Proposition.svelte";
     import { add_argument } from "../functions/functions";
     export let searching_for_argument: boolean;
     export let proposition_id: string;
     let search_query: string;
-    let search_result: proposition[];
+    let search_result: any[];
     let search_box: string = "none";
     let argument_response: string = "";
 
-
+  
     const search = (query: string) => {
         fetch("/api/search?query=" + query)
         .then(response => response.json())
@@ -43,13 +42,13 @@
     <button class="close-button" on:click={() => close()}>X</button>
     {#each search_result as proposition}
     <div class="search-item">
-        <p>{proposition.lexical_description}</p>
-        <div>
-            <Link to="/proposition-redirect?id={proposition.id}">GOTO</Link>
-        {#if searching_for_argument && proposition_id !== proposition.id}
-            <button on:click={async () => argument_response = await add_argument(proposition_id, proposition.id)}>Add as argument</button>
-        {/if}
-        </div>
+    {#if !searching_for_argument}
+        <Link to="/proposition-redirect?id={proposition.id}">{proposition.lexical_description}</Link>
+    {/if}
+    {#if searching_for_argument && proposition_id !== proposition.id}
+        <button on:click={async () => argument_response = await add_argument(proposition_id, proposition.id)}>Add {proposition.lexical_description} as argument</button>
+    {/if}
+    
     </div>
     {/each}
     <p>{argument_response}</p>
